@@ -243,7 +243,7 @@ th,td{
 <!-- 📅 고정 수입·지출 예정일 및 세부항목 관리 -->
 <div class="card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
 <h2 style="color:#047857;">📅 고정 수입·지출 예정일 관리</h2>
-<p class="muted" style="margin-bottom:10px;">금액/날짜 수정 및 세부항목을 관리하고 '고정 내역 저장'을 누르면 영구 적용됩니다.</p>
+<p class="muted" style="margin-bottom:10px;">금액/날짜 수정 후 '고정 내역 저장'을 누르면 영구 적용됩니다.</p>
 <div id="fixedItemsList"></div>
 
 <!-- 새로운 고정 항목 추가 영역 -->
@@ -414,7 +414,7 @@ $('txDate').value = today;
 const incomePresets = ['급여', '와이프보탬', '상여금', '기타수입'];
 const expensePresets = ['주담대', '마통이자', '생활안정대출', '카니발할부', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '담배값', '주유비', '기타지출'];
 
-// 기본 고정 내역 템플릿 (보험료 세부항목 기본 예시 포함)
+// 기본 고정 내역 템플릿
 const defaultFixedItems = [
   { type: 'income', category: '급여', memo: '기본급 및 수당', day: '25', amount: 4800000, subItems: [] },
   { type: 'expense', category: '주담대', memo: '신한 주택담보대출 이자/원금', day: '25', amount: 1543361, subItems: [] },
@@ -465,7 +465,11 @@ async function loadFixedItems(){
   const { data, error } = await supabaseClient.from('fixed_items').select('*').order('id', { ascending: true });
   
   if (error || !data || data.length === 0) {
-    fixedItems = defaultFixedItems.map(item => ({ ...item, checked: false }));
+    fixedItems = defaultFixedItems.map(item => ({ 
+      ...item, 
+      checked: false, 
+      showSubManager: item.subItems && item.subItems.length > 0 
+    }));
   } else {
     fixedItems = data.map(item => {
       let subs = [];
@@ -482,7 +486,8 @@ async function loadFixedItems(){
         day: item.day,
         amount: Number(item.amount),
         subItems: subs,
-        checked: false
+        checked: false,
+        showSubManager: subs.length > 0 // 세부항목이 있으면 펼쳐서 보여주고, 없으면 숨김
       };
     });
   }
@@ -541,34 +546,53 @@ function renderFixedItems(){
         </div>
       </div>`;
 
-    // 세부항목 영역
-    html += `<div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #e5e7eb;">
-      <div style="font-size: 11px; font-weight: bold; color: #4b5563; margin-bottom: 4px;">🏷️ 세부항목 관리 (체크시 합산 반영)</div>`;
-    
-    if(hasSubs){
-      item.subItems.forEach((sub, sIdx) => {
-        html += `
-        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; padding-left: 10px;">
-          <input type="checkbox" ${sub.checked ? 'checked' : ''} onchange="toggleSubCheck(${index}, ${sIdx}, this.checked)" style="width: 16px; height: 16px; cursor: pointer;">
-          <span style="font-size: 12px; flex: 1;">${sub.name} (<b style="color:#2563eb;">${won(sub.amount)}</b>)</span>
-          <button class="small danger" onclick="deleteSubItem(${index}, ${sIdx})" style="padding:2px 6px; font-size:10px;">X</button>
-        </div>`;
-      });
-    } else {
-      html += `<div class="muted" style="font-size:11px; padding-left:10px; margin-bottom:4px;">등록된 세부항목이 없습니다.</div>`;
+    // 세부항목 토글 버튼 (필요할 때만 열고 닫기)
+    html += `
+      <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <span class="muted" style="font-size:11px;">
+          ${hasSubs ? `🏷️ 세부항목 ${item.subItems.length개 등록됨` : '세부항목 없음'}
+        </span>
+        <button class="small" onclick="toggleSubManager(${index})" style="background:${hasSubs ? '#d1fae5' : '#e5e7eb'}; color:${hasSubs ? '#065f46' : '#374151'}; font-size:11px; padding:4px 8px; cursor:pointer;">
+          ${item.showSubManager ? '세부항목 접기 ▲' : (hasSubs ? '세부항목 보기/관리 ▾' : '+ 세부항목 추가')}
+        </button>
+      </div>`;
+
+    // 세부항목 영역 (showSubManager가 true일 때만 렌더링)
+    if(item.showSubManager){
+      html += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e5e7eb;">`;
+      
+      if(hasSubs){
+        item.subItems.forEach((sub, sIdx) => {
+          html += `
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; padding-left: 10px;">
+            <input type="checkbox" ${sub.checked ? 'checked' : ''} onchange="toggleSubCheck(${index}, ${sIdx}, this.checked)" style="width: 16px; height: 16px; cursor: pointer;">
+            <span style="font-size: 12px; flex: 1;">${sub.name} (<b style="color:#2563eb;">${won(sub.amount)}</b>)</span>
+            <button class="small danger" onclick="deleteSubItem(${index}, ${sIdx})" style="padding:2px 6px; font-size:10px;">X</button>
+          </div>`;
+        });
+      } else {
+        html += `<div class="muted" style="font-size:11px; padding-left:10px; margin-bottom:4px;">등록된 세부항목이 없습니다. 아래에서 추가하세요.</div>`;
+      }
+
+      // 세부항목 추가 입력폼
+      html += `
+        <div style="display: flex; gap: 4px; margin-top: 6px; padding-left: 10px;">
+          <input type="text" id="subName_${index}" placeholder="세부항목명 (예: 남편보험)" style="padding:4px; font-size:11px; flex:2;">
+          <input type="number" id="subAmount_${index}" placeholder="금액" style="padding:4px; font-size:11px; flex:1;">
+          <button class="small" onclick="addSubItem(${index})" style="background:#047857; color:white; font-size:11px; padding:4px 8px;">추가</button>
+        </div>
+      </div>`;
     }
 
-    // 세부항목 추가 입력폼
-    html += `
-      <div style="display: flex; gap: 4px; margin-top: 6px; padding-left: 10px;">
-        <input type="text" id="subName_${index}" placeholder="세부항목명 (예: 남편보험)" style="padding:4px; font-size:11px; flex:2;">
-        <input type="number" id="subAmount_${index}" placeholder="금액" style="padding:4px; font-size:11px; flex:1;">
-        <button class="small" onclick="addSubItem(${index})" style="background:#047857; color:white; font-size:11px; padding:4px 8px;">추가</button>
-      </div>
-    </div></div>`;
+    html += `</div>`;
   });
 
   $('fixedItemsList').innerHTML = html;
+}
+
+function toggleSubManager(index){
+  fixedItems[index].showSubManager = !fixedItems[index].showSubManager;
+  renderFixedItems();
 }
 
 function toggleMainCheck(index, isChecked){
@@ -645,7 +669,8 @@ function addNewFixedItem(){
     day: String(day).padStart(2, '0'),
     amount: amount,
     subItems: [],
-    checked: false
+    checked: false,
+    showSubManager: false
   });
 
   $('newFixedCategory').value = '';
