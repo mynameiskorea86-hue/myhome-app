@@ -1,0 +1,9 @@
+{
+  "name":"우리가족 가계부",
+  "short_name":"가족가계부",
+  "start_url":"./index.html",
+  "display":"standalone",
+  "background_color":"#f3f4f6",
+  "theme_color":"#1f2937",
+  "icons":[]
+}
