@@ -439,7 +439,6 @@ const defaultFixedItems = [
   { type: 'expense', category: '공과금/통신', memo: '도시가스 및 통신비/관리비', day: '21', amount: 350000, subItems: [] }
 ];
 
-// 초기 실행 시 빈 화면이 뜨지 않도록 기본값으로 즉시 설정
 let fixedItems = defaultFixedItems.map(item => ({ 
   ...item, 
   checked: false, 
@@ -465,7 +464,7 @@ function changeMonth(ym){
   loadAll();
 }
 
-// Supabase에서 고정 내역 불러오기 (안전한 예외 처리)
+// Supabase에서 고정 내역 불러오기
 async function loadFixedItems(){
   try {
     const { data, error } = await supabaseClient.from('fixed_items').select('*').order('id', { ascending: true });
@@ -483,11 +482,11 @@ async function loadFixedItems(){
           type: item.type,
           category: item.category,
           memo: item.memo,
-          day: item.day,
+          day: String(item.day).padStart(2, '0'),
           amount: Number(item.amount),
           subItems: subs,
           checked: false,
-          showSubManager: subs.length > 0 // 세부항목이 있으면 펼쳐서 보여주고, 없으면 숨김
+          showSubManager: subs.length > 0
         };
       });
     }
@@ -497,22 +496,25 @@ async function loadFixedItems(){
   renderFixedItems();
 }
 
-// 수정된 고정 내역을 Supabase에 영구 저장하기
+// 수정된 고정 내역을 Supabase에 영구 저장하기 (안전한 upsert 방식 적용)
 async function saveFixedItemsToDB(){
   if(!confirm('현재 수정된 고정 수입·지출 내역과 세부항목을 영구 저장하시겠습니까?')) return;
 
   try {
-    await supabaseClient.from('fixed_items').delete().neq('id', 0);
-
     for(let item of fixedItems){
-      await supabaseClient.from('fixed_items').insert({
+      const payload = {
         type: item.type,
         category: item.category,
         memo: item.memo,
         day: item.day,
         amount: item.amount,
         sub_items: JSON.stringify(item.subItems || [])
-      });
+      };
+      if(item.id){
+        payload.id = item.id;
+      }
+      const { error } = await supabaseClient.from('fixed_items').upsert(payload);
+      if(error) throw error;
     }
 
     alert('고정 내역이 안전하게 저장되었습니다!');
@@ -523,7 +525,7 @@ async function saveFixedItemsToDB(){
 }
 
 function renderFixedItems(){
-  fixedItems.sort((a, b) => String(a.day).localeCompare(String(b.day)));
+  fixedItems.sort((a, b) => Number(a.day) - Number(b.day));
 
   let html = '';
   fixedItems.forEach((item, index) => {
@@ -553,7 +555,6 @@ function renderFixedItems(){
         </div>
       </div>`;
 
-    // 세부항목 토글 버튼 (필요할 때만 열고 닫기)
     html += `
       <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
         <span class="muted" style="font-size:11px;">
@@ -564,7 +565,6 @@ function renderFixedItems(){
         </button>
       </div>`;
 
-    // 세부항목 영역 (showSubManager가 true일 때만 렌더링)
     if(item.showSubManager){
       html += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e5e7eb;">`;
       
@@ -581,7 +581,6 @@ function renderFixedItems(){
         html += `<div class="muted" style="font-size:11px; padding-left:10px; margin-bottom:4px;">등록된 세부항목이 없습니다. 아래에서 추가하세요.</div>`;
       }
 
-      // 세부항목 추가 입력폼
       html += `
         <div style="display: flex; gap: 4px; margin-top: 6px; padding-left: 10px;">
           <input type="text" id="subName_${index}" placeholder="세부항목명 (예: 남편보험)" style="padding:4px; font-size:11px; flex:2;">
@@ -652,9 +651,19 @@ function updateFixedItem(index, field, value){
   fixedItems[index][field] = value;
 }
 
+// 모바일 브라우저 환경에서 날짜 형식 파싱 보완
 function updateFixedItemDate(index, value){
-  if(value && value.length >= 10){
-    fixedItems[index].day = value.slice(8, 10);
+  if(!value) return;
+  let dayStr = '';
+  if(value.includes('-')){
+    const parts = value.split('-');
+    if(parts.length >= 3) dayStr = parts[2];
+  } else {
+    const clean = value.replace(/[^0-9]/g, '');
+    if(clean.length >= 8) dayStr = clean.slice(6, 8);
+  }
+  if(dayStr){
+    fixedItems[index].day = String(Number(dayStr)).padStart(2, '0');
     renderFixedItems();
   }
 }
@@ -691,6 +700,10 @@ function addNewFixedItem(){
 
 async function deleteFixedItem(index){
   if(!confirm('이 고정 항목을 삭제하시겠습니까?')) return;
+  const item = fixedItems[index];
+  if(item.id){
+    await supabaseClient.from('fixed_items').delete().eq('id', item.id);
+  }
   fixedItems.splice(index, 1);
   renderFixedItems();
 }
@@ -908,9 +921,9 @@ async function loadGoals(){
 
 window.addEventListener('load', async () => {
   try{
-    renderFixedItems(); // 먼저 기본 목록을 즉시 렌더링
+    renderFixedItems();
     updatePresets();
-    await loadFixedItems(); // DB 데이터 불러오기 시도
+    await loadFixedItems();
     await loadAll();
     console.log('초기화 완료');
   }catch(error){
