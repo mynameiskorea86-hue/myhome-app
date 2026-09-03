@@ -240,11 +240,45 @@ th,td{
 </div>
 </div>
 
-<!-- 📅 고정 수입·지출 예정일 및 금액 관리 -->
+<!-- 📅 고정 수입·지출 예정일 및 세부항목 관리 -->
 <div class="card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
 <h2 style="color:#047857;">📅 고정 수입·지출 예정일 관리</h2>
-<p class="muted" style="margin-bottom:10px;">금액이나 날짜를 수정하고 '고정 내역 저장'을 누르면 다음 달에도 영구 적용됩니다.</p>
+<p class="muted" style="margin-bottom:10px;">금액/날짜 수정 및 세부항목을 관리하고 '고정 내역 저장'을 누르면 영구 적용됩니다.</p>
 <div id="fixedItemsList"></div>
+
+<!-- 새로운 고정 항목 추가 영역 -->
+<div style="margin-top:20px; padding-top:15px; border-top:2px dashed #bbf7d0;">
+  <b style="font-size:13px; color:#047857;">➕ 새로운 고정 수입/지출 항목 추가</b>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+    <div>
+      <label style="margin:0 0 2px 0; font-size:10px;">구분</label>
+      <select id="newFixedType" style="padding:6px; font-size:12px;">
+        <option value="expense">지출</option>
+        <option value="income">수입</option>
+      </select>
+    </div>
+    <div>
+      <label style="margin:0 0 2px 0; font-size:10px;">일자 (일)</label>
+      <input type="number" id="newFixedDay" placeholder="예: 25" min="1" max="31" style="padding:6px; font-size:12px;">
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+    <div>
+      <label style="margin:0 0 2px 0; font-size:10px;">항목명 (카테고리)</label>
+      <input type="text" id="newFixedCategory" placeholder="예: 보험료" style="padding:6px; font-size:12px;">
+    </div>
+    <div>
+      <label style="margin:0 0 2px 0; font-size:10px;">메모</label>
+      <input type="text" id="newFixedMemo" placeholder="예: 가족 보험" style="padding:6px; font-size:12px;">
+    </div>
+  </div>
+  <div style="margin-top:8px;">
+    <label style="margin:0 0 2px 0; font-size:10px;">금액 (세부항목이 없을 경우 입력)</label>
+    <input type="number" id="newFixedAmount" placeholder="원" style="padding:6px; font-size:12px;">
+  </div>
+  <button class="primary small" onclick="addNewFixedItem()" style="background:#047857; width:100%; margin-top:8px;">고정 항목 추가하기</button>
+</div>
+
 <div style="display:flex; gap:8px; margin-top:15px;">
   <button class="primary" onclick="saveFixedItemsToDB()" style="background:#2563eb; flex:1; margin-top:0;">수정된 고정 내역 저장</button>
   <button class="primary accent" onclick="applyCheckedFixedItems()" style="flex:1; margin-top:0;">체크한 내역 가계부 반영</button>
@@ -380,23 +414,36 @@ $('txDate').value = today;
 const incomePresets = ['급여', '와이프보탬', '상여금', '기타수입'];
 const expensePresets = ['주담대', '마통이자', '생활안정대출', '카니발할부', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '담배값', '주유비', '기타지출'];
 
-// 기본 고정 내역 템플릿
+// 기본 고정 내역 템플릿 (보험료 세부항목 기본 예시 포함)
 const defaultFixedItems = [
-  { type: 'income', category: '급여', memo: '기본급 및 수당', day: '25', amount: 4800000 },
-  { type: 'expense', category: '주담대', memo: '신한 주택담보대출 이자/원금', day: '25', amount: 1543361 },
-  { type: 'expense', category: '마통이자', memo: '마이너스통장 이자', day: '10', amount: 189620 },
-  { type: 'expense', category: '생활안정대출', memo: '생활안정자금 상환', day: '10', amount: 117035 },
-  { type: 'expense', category: '카니발할부', memo: '카니발 차량 할부(7.9%)', day: '15', amount: 407096 },
-  { type: 'expense', category: '국민카드생활비', memo: '국민카드 생활비', day: '15', amount: 1113588 },
-  { type: 'expense', category: '롯데카드', memo: '롯데카드 결제', day: '14', amount: 472590 },
-  { type: 'expense', category: '보험료', memo: '가족 통합 보험료', day: '20', amount: 240000 },
-  { type: 'expense', category: '공과금/통신', memo: '도시가스 및 통신비/관리비', day: '21', amount: 350000 }
+  { type: 'income', category: '급여', memo: '기본급 및 수당', day: '25', amount: 4800000, subItems: [] },
+  { type: 'expense', category: '주담대', memo: '신한 주택담보대출 이자/원금', day: '25', amount: 1543361, subItems: [] },
+  { type: 'expense', category: '마통이자', memo: '마이너스통장 이자', day: '10', amount: 189620, subItems: [] },
+  { type: 'expense', category: '생활안정대출', memo: '생활안정자금 상환', day: '10', amount: 117035, subItems: [] },
+  { type: 'expense', category: '카니발할부', memo: '카니발 차량 할부(7.9%)', day: '15', amount: 407096, subItems: [] },
+  { type: 'expense', category: '국민카드생활비', memo: '국민카드 생활비', day: '15', amount: 1113588, subItems: [] },
+  { type: 'expense', category: '롯데카드', memo: '롯데카드 결제', day: '14', amount: 472590, subItems: [] },
+  { 
+    type: 'expense', 
+    category: '보험료', 
+    memo: '가족 통합 보험료', 
+    day: '20', 
+    amount: 240000, 
+    subItems: [
+      { name: '남편 생명보험', amount: 80000, checked: false },
+      { name: '아내 실손보험', amount: 60000, checked: false },
+      { name: '자녀 어린이보험', amount: 50000, checked: false },
+      { name: '자동차 보험', amount: 50000, checked: false }
+    ] 
+  },
+  { type: 'expense', category: '공과금/통신', memo: '도시가스 및 통신비/관리비', day: '21', amount: 350000, subItems: [] }
 ];
 
 let fixedItems = [];
 
 function getFormattedDate(ym, day){
-  return `${ym}-${day}`;
+  const paddedDay = String(day).padStart(2, '0');
+  return `${ym}-${paddedDay}`;
 }
 
 function changeMonth(ym){
@@ -413,24 +460,39 @@ function changeMonth(ym){
   loadAll();
 }
 
-// Supabase에서 고정 내역 불러오기 (안전한 폴백 장치 추가)
+// Supabase에서 고정 내역 불러오기
 async function loadFixedItems(){
   const { data, error } = await supabaseClient.from('fixed_items').select('*').order('id', { ascending: true });
   
   if (error || !data || data.length === 0) {
-    // DB에 데이터가 없거나 에러가 나면 기본 템플릿 사용
     fixedItems = defaultFixedItems.map(item => ({ ...item, checked: false }));
   } else {
-    fixedItems = data.map(item => ({ ...item, checked: false }));
+    fixedItems = data.map(item => {
+      let subs = [];
+      try {
+        subs = item.sub_items ? JSON.parse(item.sub_items) : [];
+      } catch(e) {
+        subs = [];
+      }
+      return {
+        id: item.id,
+        type: item.type,
+        category: item.category,
+        memo: item.memo,
+        day: item.day,
+        amount: Number(item.amount),
+        subItems: subs,
+        checked: false
+      };
+    });
   }
   renderFixedItems();
 }
 
 // 수정된 고정 내역을 Supabase에 영구 저장하기
 async function saveFixedItemsToDB(){
-  if(!confirm('현재 수정된 고정 수입·지출 금액과 날짜를 영구 저장하시겠습니까?')) return;
+  if(!confirm('현재 수정된 고정 수입·지출 내역과 세부항목을 영구 저장하시겠습니까?')) return;
 
-  // 기존 항목 전체 삭제 후 현재 화면의 값들로 새로 삽입
   await supabaseClient.from('fixed_items').delete().neq('id', 0);
 
   for(let item of fixedItems){
@@ -439,7 +501,8 @@ async function saveFixedItemsToDB(){
       category: item.category,
       memo: item.memo,
       day: item.day,
-      amount: item.amount
+      amount: item.amount,
+      sub_items: JSON.stringify(item.subItems || [])
     });
   }
 
@@ -448,35 +511,110 @@ async function saveFixedItemsToDB(){
 }
 
 function renderFixedItems(){
-  fixedItems.sort((a, b) => a.day.localeCompare(b.day));
+  fixedItems.sort((a, b) => String(a.day).localeCompare(String(b.day)));
 
   let html = '';
   fixedItems.forEach((item, index) => {
     const fullDate = getFormattedDate(currentYearMonth, item.day);
+    const hasSubs = item.subItems && item.subItems.length > 0;
+
     html += `
-    <div class="row" style="align-items: center; gap: 8px; flex-wrap: wrap;">
-      <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
-        <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="updateFixedItem(${index}, 'checked', this.checked)" style="width: 18px; height: 18px; cursor: pointer;">
+    <div class="card" style="background:#ffffff; border:1px solid #e5e7eb; margin-bottom:12px; padding:12px;">
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleMainCheck(${index}, this.checked)" style="width: 20px; height: 20px; cursor: pointer;">
         <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${item.type === 'income' ? '#d1fae5' : '#fee2e2'}; color: ${item.type === 'income' ? '#065f46' : '#991b1b'}; font-weight: bold;">
           ${item.type === 'income' ? '수입' : '지출'}
         </span>
-        <b style="font-size: 13px;">${item.category}</b>
-        <span class="muted" style="font-size: 11px; margin-left: auto;">${item.memo}</span>
+        <b style="font-size: 14px;">${item.category}</b>
+        <span class="muted" style="font-size: 11px; margin-left: auto;">${item.memo || ''}</span>
+        <button class="small danger" onclick="deleteFixedItem(${index})" style="padding:4px 8px; font-size:11px;">삭제</button>
       </div>
-      <div style="display: flex; gap: 8px; width: 100%;">
+
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
         <div style="flex: 1;">
           <label style="margin:0 0 2px 0; font-size:10px;">예정일자</label>
           <input type="date" value="${fullDate}" onchange="updateFixedItemDate(${index}, this.value)" style="padding: 6px; font-size: 12px;">
         </div>
         <div style="flex: 1;">
-          <label style="margin:0 0 2px 0; font-size:10px;">금액 (수정가능)</label>
-          <input type="number" value="${item.amount}" onchange="updateFixedItem(${index}, 'amount', Number(this.value))" style="padding: 6px; font-size: 12px; font-weight: bold;">
+          <label style="margin:0 0 2px 0; font-size:10px;">금액 ${hasSubs ? '(세부항목 합산)' : '(수정가능)'}</label>
+          <input type="number" value="${item.amount}" ${hasSubs ? 'readonly style="background:#f9fafb; font-weight:bold; padding:6px; font-size:12px;"' : 'onchange="updateFixedItem(${index}, \'amount\', Number(this.value))" style="padding: 6px; font-size: 12px; font-weight: bold;"'}>
         </div>
+      </div>`;
+
+    // 세부항목 영역
+    html += `<div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #e5e7eb;">
+      <div style="font-size: 11px; font-weight: bold; color: #4b5563; margin-bottom: 4px;">🏷️ 세부항목 관리 (체크시 합산 반영)</div>`;
+    
+    if(hasSubs){
+      item.subItems.forEach((sub, sIdx) => {
+        html += `
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; padding-left: 10px;">
+          <input type="checkbox" ${sub.checked ? 'checked' : ''} onchange="toggleSubCheck(${index}, ${sIdx}, this.checked)" style="width: 16px; height: 16px; cursor: pointer;">
+          <span style="font-size: 12px; flex: 1;">${sub.name} (<b style="color:#2563eb;">${won(sub.amount)}</b>)</span>
+          <button class="small danger" onclick="deleteSubItem(${index}, ${sIdx})" style="padding:2px 6px; font-size:10px;">X</button>
+        </div>`;
+      });
+    } else {
+      html += `<div class="muted" style="font-size:11px; padding-left:10px; margin-bottom:4px;">등록된 세부항목이 없습니다.</div>`;
+    }
+
+    // 세부항목 추가 입력폼
+    html += `
+      <div style="display: flex; gap: 4px; margin-top: 6px; padding-left: 10px;">
+        <input type="text" id="subName_${index}" placeholder="세부항목명 (예: 남편보험)" style="padding:4px; font-size:11px; flex:2;">
+        <input type="number" id="subAmount_${index}" placeholder="금액" style="padding:4px; font-size:11px; flex:1;">
+        <button class="small" onclick="addSubItem(${index})" style="background:#047857; color:white; font-size:11px; padding:4px 8px;">추가</button>
       </div>
-    </div>`;
+    </div></div>`;
   });
 
   $('fixedItemsList').innerHTML = html;
+}
+
+function toggleMainCheck(index, isChecked){
+  fixedItems[index].checked = isChecked;
+  if(fixedItems[index].subItems && fixedItems[index].subItems.length > 0){
+    fixedItems[index].subItems.forEach(sub => sub.checked = isChecked);
+    if(isChecked){
+      fixedItems[index].amount = fixedItems[index].subItems.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+    } else {
+      fixedItems[index].amount = 0;
+    }
+  }
+  renderFixedItems();
+}
+
+function toggleSubCheck(itemIndex, subIndex, isChecked){
+  fixedItems[itemIndex].subItems[subIndex].checked = isChecked;
+  const checkedSubs = fixedItems[itemIndex].subItems.filter(s => s.checked);
+  fixedItems[itemIndex].amount = checkedSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+  fixedItems[itemIndex].checked = checkedSubs.length > 0;
+  renderFixedItems();
+}
+
+function addSubItem(itemIndex){
+  const nameInput = $(`subName_${itemIndex}`);
+  const amountInput = $(`subAmount_${itemIndex}`);
+  const name = nameInput.value.trim();
+  const amount = Number(amountInput.value);
+
+  if(!name){ alert('세부항목명을 입력하세요.'); return; }
+  if(!amount || amount <= 0){ alert('금액을 입력하세요.'); return; }
+
+  if(!fixedItems[itemIndex].subItems) fixedItems[itemIndex].subItems = [];
+  fixedItems[itemIndex].subItems.push({ name, amount, checked: false });
+  
+  nameInput.value = '';
+  amountInput.value = '';
+  renderFixedItems();
+}
+
+function deleteSubItem(itemIndex, subIndex){
+  fixedItems[itemIndex].subItems.splice(subIndex, 1);
+  const checkedSubs = fixedItems[itemIndex].subItems.filter(s => s.checked);
+  fixedItems[itemIndex].amount = checkedSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+  fixedItems[itemIndex].checked = checkedSubs.length > 0;
+  renderFixedItems();
 }
 
 function updateFixedItem(index, field, value){
@@ -490,10 +628,45 @@ function updateFixedItemDate(index, value){
   }
 }
 
+function addNewFixedItem(){
+  const type = $('newFixedType').value;
+  const category = $('newFixedCategory').value.trim();
+  const memo = $('newFixedMemo').value.trim();
+  const day = $('newFixedDay').value.trim();
+  const amount = Number($('newFixedAmount').value) || 0;
+
+  if(!category){ alert('항목명(카테고리)을 입력하세요.'); return; }
+  if(!day || Number(day) < 1 || Number(day) > 31){ alert('올바른 일자(1~31)를 입력하세요.'); return; }
+
+  fixedItems.push({
+    type: type,
+    category: category,
+    memo: memo,
+    day: String(day).padStart(2, '0'),
+    amount: amount,
+    subItems: [],
+    checked: false
+  });
+
+  $('newFixedCategory').value = '';
+  $('newFixedMemo').value = '';
+  $('newFixedDay').value = '';
+  $('newFixedAmount').value = '';
+
+  renderFixedItems();
+  alert('고정 항목이 추가되었습니다. 하단의 [수정된 고정 내역 저장]을 눌러야 영구 저장됩니다.');
+}
+
+async function deleteFixedItem(index){
+  if(!confirm('이 고정 항목을 삭제하시겠습니까?')) return;
+  fixedItems.splice(index, 1);
+  renderFixedItems();
+}
+
 async function applyCheckedFixedItems(){
   const selected = fixedItems.filter(item => item.checked);
   if(selected.length === 0){
-    alert('반영할 항목을 체크해주세요.');
+    alert('반영할 항목(또는 세부항목)을 체크해주세요.');
     return;
   }
   if(!confirm(`체크된 ${selected.length}개의 고정 내역을 [${currentYearMonth.replace('-', '년 ')}월] 가계부에 반영하시겠습니까?`)) return;
@@ -504,12 +677,16 @@ async function applyCheckedFixedItems(){
       tx_date: fullDate,
       type: item.type,
       category: item.category,
-      memo: item.memo,
+      memo: item.memo ? `${item.memo} (고정)` : '(고정)',
       amount: item.amount
     });
   }
 
-  fixedItems.forEach(item => item.checked = false);
+  fixedItems.forEach(item => {
+    item.checked = false;
+    if(item.subItems) item.subItems.forEach(sub => sub.checked = false);
+  });
+
   await loadAll();
   alert('선택한 고정 내역이 가계부에 성공적으로 반영되었습니다!');
 }
