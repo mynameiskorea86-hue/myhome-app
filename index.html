@@ -228,10 +228,12 @@ th,td{
 </div>
 </div>
 
-<div class="card" style="background:#fdf2f8; border:1px solid #fbcfe8;">
-<h2 style="color:#be185d;">⚡ 고정 수입·지출 원클릭 반영</h2>
-<p class="muted" style="margin-bottom:10px;">매월 반복되는 고정 수입(480만)과 고정 지출(대출·카드·보험 등 488만)을 현재 날짜로 한 번에 입력합니다.</p>
-<button class="primary accent" onclick="batchAddFixedItems()">이번 달 고정내역 일괄 등록하기</button>
+<!-- 📅 월별 고정 수입·지출 예정일 및 금액 관리 (날짜순 정렬, 수정 및 체크 반영) -->
+<div class="card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
+<h2 style="color:#047857;">📅 고정 수입·지출 예정일 관리</h2>
+<p class="muted" style="margin-bottom:10px;">이체 날짜와 금액을 확인·수정하고, 반영할 항목에 체크한 뒤 버튼을 누르세요. (이체일자 순 자동 정렬)</p>
+<div id="fixedItemsList"></div>
+<button class="primary accent" onclick="applyCheckedFixedItems()" style="margin-top: 15px;">체크한 고정 내역 가계부에 반영하기</button>
 </div>
 
 <div class="card">
@@ -355,10 +357,85 @@ const $ = id => document.getElementById(id);
 const won = n => (Number(n) || 0).toLocaleString('ko-KR') + '원';
 
 const today = new Date().toISOString().slice(0,10);
+const currentYearMonth = today.slice(0, 8); // 예: "2026-09-"
 $('txDate').value = today;
 
-const incomePresets = ['급여', '초과근무비', '와이프보탬', '상여금', '기타수입'];
-const expensePresets = ['주담대', '마통이자', '생활안정대출', '카니발할부', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '기타지출'];
+const incomePresets = ['급여', '와이프보탬', '상여금', '기타수입'];
+const expensePresets = ['주담대', '마통이자', '생활안정대출', '카니발할부', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '담배값', '주유비', '기타지출'];
+
+// 고정 수입·지출 기본 설정 (날짜, 금액 수정 가능, 체크 반영)
+let fixedItems = [
+  { type: 'income', category: '급여', memo: '기본급 및 수당', date: currentYearMonth + '25', amount: 4800000, checked: true },
+  { type: 'expense', category: '주담대', memo: '신한 주택담보대출 이자/원금', date: currentYearMonth + '25', amount: 1543361, checked: true },
+  { type: 'expense', category: '마통이자', memo: '마이너스통장 이자', date: currentYearMonth + '10', amount: 189620, checked: true },
+  { type: 'expense', category: '생활안정대출', memo: '생활안정자금 상환', date: currentYearMonth + '10', amount: 117035, checked: true },
+  { type: 'expense', category: '카니발할부', memo: '카니발 차량 할부(7.9%)', date: currentYearMonth + '15', amount: 407096, checked: true },
+  { type: 'expense', category: '국민카드생활비', memo: '국민카드 생활비', date: currentYearMonth + '15', amount: 1113588, checked: true },
+  { type: 'expense', category: '롯데카드', memo: '롯데카드 결제', date: currentYearMonth + '14', amount: 472590, checked: true },
+  { type: 'expense', category: '보험료', memo: '가족 통합 보험료', date: currentYearMonth + '20', amount: 240000, checked: true },
+  { type: 'expense', category: '공과금/통신', memo: '도시가스 및 통신비/관리비', date: currentYearMonth + '21', amount: 350000, checked: true }
+];
+
+function renderFixedItems(){
+  // 날짜순(오름차순) 정렬
+  fixedItems.sort((a, b) => a.date.localeCompare(b.date));
+
+  let html = '';
+  fixedItems.forEach((item, index) => {
+    html += `
+    <div class="row" style="align-items: center; gap: 8px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
+        <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="updateFixedItem(${index}, 'checked', this.checked)" style="width: 18px; height: 18px; cursor: pointer;">
+        <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${item.type === 'income' ? '#d1fae5' : '#fee2e2'}; color: ${item.type === 'income' ? '#065f46' : '#991b1b'}; font-weight: bold;">
+          ${item.type === 'income' ? '수입' : '지출'}
+        </span>
+        <b style="font-size: 13px;">${item.category}</b>
+        <span class="muted" style="font-size: 11px; margin-left: auto;">${item.memo}</span>
+      </div>
+      <div style="display: flex; gap: 8px; width: 100%;">
+        <div style="flex: 1;">
+          <label style="margin:0 0 2px 0; font-size:10px;">예정일자</label>
+          <input type="date" value="${item.date}" onchange="updateFixedItem(${index}, 'date', this.value)" style="padding: 6px; font-size: 12px;">
+        </div>
+        <div style="flex: 1;">
+          <label style="margin:0 0 2px 0; font-size:10px;">금액 (수정가능)</label>
+          <input type="number" value="${item.amount}" onchange="updateFixedItem(${index}, 'amount', Number(this.value))" style="padding: 6px; font-size: 12px; font-weight: bold;">
+        </div>
+      </div>
+    </div>`;
+  });
+
+  $('fixedItemsList').innerHTML = html;
+}
+
+function updateFixedItem(index, field, value){
+  fixedItems[index][field] = value;
+  if(field === 'date'){
+    renderFixedItems(); // 날짜가 바뀌면 즉시 날짜순으로 재정렬
+  }
+}
+
+async function applyCheckedFixedItems(){
+  const selected = fixedItems.filter(item => item.checked);
+  if(selected.length === 0){
+    alert('반영할 항목을 체크해주세요.');
+    return;
+  }
+  if(!confirm(`체크된 ${selected.length}개의 고정 내역을 가계부에 반영하시겠습니까?`)) return;
+
+  for(let item of selected){
+    await supabaseClient.from('transactions').insert({
+      tx_date: item.date,
+      type: item.type,
+      category: item.category,
+      memo: item.memo,
+      amount: item.amount
+    });
+  }
+
+  await loadAll();
+  alert('선택한 고정 내역이 가계부에 성공적으로 반영되었습니다!');
+}
 
 function updatePresets(){
   const type = $('txType').value;
@@ -373,6 +450,7 @@ function setCategory(cat){
 
 window.addEventListener('DOMContentLoaded', () => {
   updatePresets();
+  renderFixedItems();
 });
 
 function showTab(id, btn){
@@ -380,37 +458,6 @@ function showTab(id, btn){
   $(id).classList.add('active');
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
   btn.classList.add('active');
-}
-
-async function batchAddFixedItems(){
-  if(!confirm('이번 달 고정 수입 및 지출 항목들을 일괄 등록하시겠습니까?')) return;
-
-  const fixedItems = [
-    { type: 'income', category: '급여', memo: '기본급 및 수당', amount: 4800000 },
-    { type: 'expense', category: '주담대', memo: '신한 주택담보대출 이자/원금', amount: 1543361 },
-    { type: 'expense', category: '마통이자', memo: '마이너스통장 이자', amount: 189620 },
-    { type: 'expense', category: '생활안정대출', memo: '생활안정자금 상환', amount: 117035 },
-    { type: 'expense', category: '카니발할부', memo: '카니발 차량 할부(7.9%)', amount: 407096 },
-    { type: 'expense', category: '국민카드생활비', memo: '국민카드 생활비', amount: 1113588 },
-    { type: 'expense', category: '롯데카드', memo: '롯데카드 결제', amount: 472590 },
-    { type: 'expense', category: '보험료', memo: '가족 통합 보험료', amount: 240000 },
-    { type: 'expense', category: '공과금/통신', memo: '도시가스 및 통신비/관리비', amount: 350000 }
-  ];
-
-  const currentDate = $('txDate').value || today;
-
-  for(let item of fixedItems){
-    await supabaseClient.from('transactions').insert({
-      tx_date: currentDate,
-      type: item.type,
-      category: item.category,
-      memo: item.memo,
-      amount: item.amount
-    });
-  }
-
-  await loadAll();
-  alert('고정 수입 및 지출 내역이 성공적으로 일괄 등록되었습니다!');
 }
 
 async function addTx(){
