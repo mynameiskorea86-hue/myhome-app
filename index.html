@@ -413,20 +413,13 @@ function changeMonth(ym){
   loadAll();
 }
 
-// Supabase에서 고정 내역 불러오기 (없으면 기본값 자동 생성)
+// Supabase에서 고정 내역 불러오기 (안전한 폴백 장치 추가)
 async function loadFixedItems(){
   const { data, error } = await supabaseClient.from('fixed_items').select('*').order('id', { ascending: true });
   
-  if (error) {
-    console.error('fixed_items load error:', error);
+  if (error || !data || data.length === 0) {
+    // DB에 데이터가 없거나 에러가 나면 기본 템플릿 사용
     fixedItems = defaultFixedItems.map(item => ({ ...item, checked: false }));
-  } else if (!data || data.length === 0) {
-    // 최초 실행 시 기본 데이터를 Supabase에 저장
-    for (let item of defaultFixedItems) {
-      await supabaseClient.from('fixed_items').insert(item);
-    }
-    const { data: newData } = await supabaseClient.from('fixed_items').select('*').order('id', { ascending: true });
-    fixedItems = (newData || defaultFixedItems).map(item => ({ ...item, checked: false }));
   } else {
     fixedItems = data.map(item => ({ ...item, checked: false }));
   }
@@ -437,8 +430,8 @@ async function loadFixedItems(){
 async function saveFixedItemsToDB(){
   if(!confirm('현재 수정된 고정 수입·지출 금액과 날짜를 영구 저장하시겠습니까?')) return;
 
-  // 기존 항목 전체 삭제 후 새로 삽입하여 동기화
-  await supabaseClient.from('fixed_items').delete().neq('id', 0); // 전체 삭제
+  // 기존 항목 전체 삭제 후 현재 화면의 값들로 새로 삽입
+  await supabaseClient.from('fixed_items').delete().neq('id', 0);
 
   for(let item of fixedItems){
     await supabaseClient.from('fixed_items').insert({
@@ -450,7 +443,7 @@ async function saveFixedItemsToDB(){
     });
   }
 
-  alert('고정 내역이 데이터베이스에 안전하게 저장되었습니다!');
+  alert('고정 내역이 안전하게 저장되었습니다!');
   await loadFixedItems();
 }
 
