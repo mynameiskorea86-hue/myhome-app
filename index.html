@@ -209,6 +209,18 @@ th,td{
 
 <section id="dash" class="section active">
 
+<!-- 📅 월 선택 및 년월 표시 카드 -->
+<div class="card" style="background:#eff6ff; border:1px solid #bfdbfe; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+  <div>
+    <div class="muted">현재 작성/조회 중인 가계부</div>
+    <div id="currentMonthTitle" style="font-size:20px; font-weight:800; color:#1d4ed8;">2026년 9월</div>
+  </div>
+  <div style="width:160px;">
+    <label style="margin:0 0 2px 0; font-size:10px;">다른 월 선택하기</label>
+    <input type="month" id="monthSelector" onchange="changeMonth(this.value)" style="padding:6px; font-weight:bold;">
+  </div>
+</div>
+
 <div class="grid">
 <div class="card">
 <div class="muted">이번 달 수입</div>
@@ -228,12 +240,15 @@ th,td{
 </div>
 </div>
 
-<!-- 📅 월별 고정 수입·지출 예정일 및 금액 관리 (날짜순 정렬, 수정 및 체크 반영) -->
+<!-- 📅 고정 수입·지출 예정일 및 금액 관리 -->
 <div class="card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
 <h2 style="color:#047857;">📅 고정 수입·지출 예정일 관리</h2>
-<p class="muted" style="margin-bottom:10px;">이체 날짜와 금액을 확인·수정하고, 반영할 항목에 체크한 뒤 버튼을 누르세요. (이체일자 순 자동 정렬)</p>
+<p class="muted" style="margin-bottom:10px;">금액이나 날짜를 수정하고 '고정 내역 저장'을 누르면 다음 달에도 영구 적용됩니다.</p>
 <div id="fixedItemsList"></div>
-<button class="primary accent" onclick="applyCheckedFixedItems()" style="margin-top: 15px;">체크한 고정 내역 가계부에 반영하기</button>
+<div style="display:flex; gap:8px; margin-top:15px;">
+  <button class="primary" onclick="saveFixedItemsToDB()" style="background:#2563eb; flex:1; margin-top:0;">수정된 고정 내역 저장</button>
+  <button class="primary accent" onclick="applyCheckedFixedItems()" style="flex:1; margin-top:0;">체크한 내역 가계부 반영</button>
+</div>
 </div>
 
 <div class="card">
@@ -283,7 +298,7 @@ th,td{
 </div>
 
 <div class="card">
-<h2>최근 내역</h2>
+<h2>선택한 월(<span id="txListMonthTitle">2026년 9월</span>) 내역</h2>
 <div id="txList"></div>
 </div>
 
@@ -357,31 +372,94 @@ const $ = id => document.getElementById(id);
 const won = n => (Number(n) || 0).toLocaleString('ko-KR') + '원';
 
 const today = new Date().toISOString().slice(0,10);
-const currentYearMonth = today.slice(0, 8); // 예: "2026-09-"
+let currentYearMonth = today.slice(0, 7);
+
+$('monthSelector').value = currentYearMonth;
 $('txDate').value = today;
 
 const incomePresets = ['급여', '와이프보탬', '상여금', '기타수입'];
 const expensePresets = ['주담대', '마통이자', '생활안정대출', '카니발할부', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '담배값', '주유비', '기타지출'];
 
-// 고정 수입·지출 기본 설정 (날짜, 금액 수정 가능, 체크 반영)
-let fixedItems = [
-  { type: 'income', category: '급여', memo: '기본급 및 수당', date: currentYearMonth + '25', amount: 4800000, checked: true },
-  { type: 'expense', category: '주담대', memo: '신한 주택담보대출 이자/원금', date: currentYearMonth + '25', amount: 1543361, checked: true },
-  { type: 'expense', category: '마통이자', memo: '마이너스통장 이자', date: currentYearMonth + '10', amount: 189620, checked: true },
-  { type: 'expense', category: '생활안정대출', memo: '생활안정자금 상환', date: currentYearMonth + '10', amount: 117035, checked: true },
-  { type: 'expense', category: '카니발할부', memo: '카니발 차량 할부(7.9%)', date: currentYearMonth + '15', amount: 407096, checked: true },
-  { type: 'expense', category: '국민카드생활비', memo: '국민카드 생활비', date: currentYearMonth + '15', amount: 1113588, checked: true },
-  { type: 'expense', category: '롯데카드', memo: '롯데카드 결제', date: currentYearMonth + '14', amount: 472590, checked: true },
-  { type: 'expense', category: '보험료', memo: '가족 통합 보험료', date: currentYearMonth + '20', amount: 240000, checked: true },
-  { type: 'expense', category: '공과금/통신', memo: '도시가스 및 통신비/관리비', date: currentYearMonth + '21', amount: 350000, checked: true }
+// 기본 고정 내역 템플릿
+const defaultFixedItems = [
+  { type: 'income', category: '급여', memo: '기본급 및 수당', day: '25', amount: 4800000 },
+  { type: 'expense', category: '주담대', memo: '신한 주택담보대출 이자/원금', day: '25', amount: 1543361 },
+  { type: 'expense', category: '마통이자', memo: '마이너스통장 이자', day: '10', amount: 189620 },
+  { type: 'expense', category: '생활안정대출', memo: '생활안정자금 상환', day: '10', amount: 117035 },
+  { type: 'expense', category: '카니발할부', memo: '카니발 차량 할부(7.9%)', day: '15', amount: 407096 },
+  { type: 'expense', category: '국민카드생활비', memo: '국민카드 생활비', day: '15', amount: 1113588 },
+  { type: 'expense', category: '롯데카드', memo: '롯데카드 결제', day: '14', amount: 472590 },
+  { type: 'expense', category: '보험료', memo: '가족 통합 보험료', day: '20', amount: 240000 },
+  { type: 'expense', category: '공과금/통신', memo: '도시가스 및 통신비/관리비', day: '21', amount: 350000 }
 ];
 
+let fixedItems = [];
+
+function getFormattedDate(ym, day){
+  return `${ym}-${day}`;
+}
+
+function changeMonth(ym){
+  if(!ym) return;
+  currentYearMonth = ym;
+  const [y, m] = ym.split('-');
+  const title = `${y}년 ${Number(m)}월`;
+  $('currentMonthTitle').textContent = title;
+  $('txListMonthTitle').textContent = title;
+
+  $('txDate').value = ym === today.slice(0, 7) ? today : `${ym}-01`;
+
+  renderFixedItems();
+  loadAll();
+}
+
+// Supabase에서 고정 내역 불러오기 (없으면 기본값 자동 생성)
+async function loadFixedItems(){
+  const { data, error } = await supabaseClient.from('fixed_items').select('*').order('id', { ascending: true });
+  
+  if (error) {
+    console.error('fixed_items load error:', error);
+    fixedItems = defaultFixedItems.map(item => ({ ...item, checked: false }));
+  } else if (!data || data.length === 0) {
+    // 최초 실행 시 기본 데이터를 Supabase에 저장
+    for (let item of defaultFixedItems) {
+      await supabaseClient.from('fixed_items').insert(item);
+    }
+    const { data: newData } = await supabaseClient.from('fixed_items').select('*').order('id', { ascending: true });
+    fixedItems = (newData || defaultFixedItems).map(item => ({ ...item, checked: false }));
+  } else {
+    fixedItems = data.map(item => ({ ...item, checked: false }));
+  }
+  renderFixedItems();
+}
+
+// 수정된 고정 내역을 Supabase에 영구 저장하기
+async function saveFixedItemsToDB(){
+  if(!confirm('현재 수정된 고정 수입·지출 금액과 날짜를 영구 저장하시겠습니까?')) return;
+
+  // 기존 항목 전체 삭제 후 새로 삽입하여 동기화
+  await supabaseClient.from('fixed_items').delete().neq('id', 0); // 전체 삭제
+
+  for(let item of fixedItems){
+    await supabaseClient.from('fixed_items').insert({
+      type: item.type,
+      category: item.category,
+      memo: item.memo,
+      day: item.day,
+      amount: item.amount
+    });
+  }
+
+  alert('고정 내역이 데이터베이스에 안전하게 저장되었습니다!');
+  await loadFixedItems();
+}
+
 function renderFixedItems(){
-  // 날짜순(오름차순) 정렬
-  fixedItems.sort((a, b) => a.date.localeCompare(b.date));
+  fixedItems.sort((a, b) => a.day.localeCompare(b.day));
 
   let html = '';
   fixedItems.forEach((item, index) => {
+    const fullDate = getFormattedDate(currentYearMonth, item.day);
     html += `
     <div class="row" style="align-items: center; gap: 8px; flex-wrap: wrap;">
       <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
@@ -395,7 +473,7 @@ function renderFixedItems(){
       <div style="display: flex; gap: 8px; width: 100%;">
         <div style="flex: 1;">
           <label style="margin:0 0 2px 0; font-size:10px;">예정일자</label>
-          <input type="date" value="${item.date}" onchange="updateFixedItem(${index}, 'date', this.value)" style="padding: 6px; font-size: 12px;">
+          <input type="date" value="${fullDate}" onchange="updateFixedItemDate(${index}, this.value)" style="padding: 6px; font-size: 12px;">
         </div>
         <div style="flex: 1;">
           <label style="margin:0 0 2px 0; font-size:10px;">금액 (수정가능)</label>
@@ -410,8 +488,12 @@ function renderFixedItems(){
 
 function updateFixedItem(index, field, value){
   fixedItems[index][field] = value;
-  if(field === 'date'){
-    renderFixedItems(); // 날짜가 바뀌면 즉시 날짜순으로 재정렬
+}
+
+function updateFixedItemDate(index, value){
+  if(value && value.length >= 10){
+    fixedItems[index].day = value.slice(8, 10);
+    renderFixedItems();
   }
 }
 
@@ -421,11 +503,12 @@ async function applyCheckedFixedItems(){
     alert('반영할 항목을 체크해주세요.');
     return;
   }
-  if(!confirm(`체크된 ${selected.length}개의 고정 내역을 가계부에 반영하시겠습니까?`)) return;
+  if(!confirm(`체크된 ${selected.length}개의 고정 내역을 [${currentYearMonth.replace('-', '년 ')}월] 가계부에 반영하시겠습니까?`)) return;
 
   for(let item of selected){
+    const fullDate = getFormattedDate(currentYearMonth, item.day);
     await supabaseClient.from('transactions').insert({
-      tx_date: item.date,
+      tx_date: fullDate,
       type: item.type,
       category: item.category,
       memo: item.memo,
@@ -433,6 +516,7 @@ async function applyCheckedFixedItems(){
     });
   }
 
+  fixedItems.forEach(item => item.checked = false);
   await loadAll();
   alert('선택한 고정 내역이 가계부에 성공적으로 반영되었습니다!');
 }
@@ -447,11 +531,6 @@ function updatePresets(){
 function setCategory(cat){
   $('txCategory').value = cat;
 }
-
-window.addEventListener('DOMContentLoaded', () => {
-  updatePresets();
-  renderFixedItems();
-});
 
 function showTab(id, btn){
   document.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
@@ -478,7 +557,15 @@ async function addTx(){
 
   $('txAmount').value='';
   $('txMemo').value='';
-  await loadAll();
+  
+  const txYM = date.slice(0, 7);
+  if(txYM !== currentYearMonth){
+    $('monthSelector').value = txYM;
+    changeMonth(txYM);
+  } else {
+    await loadAll();
+  }
+
   alert('저장되었습니다.');
 }
 
@@ -517,7 +604,16 @@ async function loadAll(){
 }
 
 async function loadTx(){
-  const {data, error} = await supabaseClient.from('transactions').select('*').order('tx_date',{ascending:false}).limit(100);
+  const startDate = currentYearMonth + '-01';
+  const [y, m] = currentYearMonth.split('-');
+  const lastDay = new Date(y, m, 0).getDate();
+  const endDate = `${currentYearMonth}-${lastDay}`;
+
+  const {data, error} = await supabaseClient.from('transactions')
+    .select('*')
+    .gte('tx_date', startDate)
+    .lte('tx_date', endDate)
+    .order('tx_date', {ascending: false});
 
   if(error){
     console.error('transactions:', error);
@@ -547,7 +643,7 @@ async function loadTx(){
     </div>`;
   });
 
-  $('txList').innerHTML = html || '<div class="empty">등록된 내역이 없습니다.</div>';
+  $('txList').innerHTML = html || `<div class="empty">${y}년 ${Number(m)}월에 등록된 내역이 없습니다.</div>`;
   $('dashIncome').textContent = won(income);
   $('dashExpense').textContent = won(expense);
   $('dashBalance').textContent = won(income - expense);
@@ -610,8 +706,10 @@ async function loadGoals(){
 
 window.addEventListener('load', async () => {
   try{
-    await loadAll();
-    console.log('Supabase 연결 성공');
+    changeMonth(currentYearMonth);
+    updatePresets();
+    await loadFixedItems();
+    console.log('Supabase 연결 및 고정 내역 로드 성공');
   }catch(error){
     console.error(error);
     alert('Supabase 연결에 문제가 있습니다.\n' + error.message);
