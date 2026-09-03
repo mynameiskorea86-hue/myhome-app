@@ -439,7 +439,12 @@ const defaultFixedItems = [
   { type: 'expense', category: '공과금/통신', memo: '도시가스 및 통신비/관리비', day: '21', amount: 350000, subItems: [] }
 ];
 
-let fixedItems = [];
+// 초기 실행 시 빈 화면이 뜨지 않도록 기본값으로 즉시 설정
+let fixedItems = defaultFixedItems.map(item => ({ 
+  ...item, 
+  checked: false, 
+  showSubManager: item.subItems && item.subItems.length > 0 
+}));
 
 function getFormattedDate(ym, day){
   const paddedDay = String(day).padStart(2, '0');
@@ -460,36 +465,34 @@ function changeMonth(ym){
   loadAll();
 }
 
-// Supabase에서 고정 내역 불러오기
+// Supabase에서 고정 내역 불러오기 (안전한 예외 처리)
 async function loadFixedItems(){
-  const { data, error } = await supabaseClient.from('fixed_items').select('*').order('id', { ascending: true });
-  
-  if (error || !data || data.length === 0) {
-    fixedItems = defaultFixedItems.map(item => ({ 
-      ...item, 
-      checked: false, 
-      showSubManager: item.subItems && item.subItems.length > 0 
-    }));
-  } else {
-    fixedItems = data.map(item => {
-      let subs = [];
-      try {
-        subs = item.sub_items ? JSON.parse(item.sub_items) : [];
-      } catch(e) {
-        subs = [];
-      }
-      return {
-        id: item.id,
-        type: item.type,
-        category: item.category,
-        memo: item.memo,
-        day: item.day,
-        amount: Number(item.amount),
-        subItems: subs,
-        checked: false,
-        showSubManager: subs.length > 0 // 세부항목이 있으면 펼쳐서 보여주고, 없으면 숨김
-      };
-    });
+  try {
+    const { data, error } = await supabaseClient.from('fixed_items').select('*').order('id', { ascending: true });
+    
+    if (!error && data && data.length > 0) {
+      fixedItems = data.map(item => {
+        let subs = [];
+        try {
+          subs = item.sub_items ? JSON.parse(item.sub_items) : [];
+        } catch(e) {
+          subs = [];
+        }
+        return {
+          id: item.id,
+          type: item.type,
+          category: item.category,
+          memo: item.memo,
+          day: item.day,
+          amount: Number(item.amount),
+          subItems: subs,
+          checked: false,
+          showSubManager: subs.length > 0 // 세부항목이 있으면 펼쳐서 보여주고, 없으면 숨김
+        };
+      });
+    }
+  } catch(err) {
+    console.warn('DB 로딩 중 기본값 사용:', err);
   }
   renderFixedItems();
 }
@@ -498,21 +501,25 @@ async function loadFixedItems(){
 async function saveFixedItemsToDB(){
   if(!confirm('현재 수정된 고정 수입·지출 내역과 세부항목을 영구 저장하시겠습니까?')) return;
 
-  await supabaseClient.from('fixed_items').delete().neq('id', 0);
+  try {
+    await supabaseClient.from('fixed_items').delete().neq('id', 0);
 
-  for(let item of fixedItems){
-    await supabaseClient.from('fixed_items').insert({
-      type: item.type,
-      category: item.category,
-      memo: item.memo,
-      day: item.day,
-      amount: item.amount,
-      sub_items: JSON.stringify(item.subItems || [])
-    });
+    for(let item of fixedItems){
+      await supabaseClient.from('fixed_items').insert({
+        type: item.type,
+        category: item.category,
+        memo: item.memo,
+        day: item.day,
+        amount: item.amount,
+        sub_items: JSON.stringify(item.subItems || [])
+      });
+    }
+
+    alert('고정 내역이 안전하게 저장되었습니다!');
+    await loadFixedItems();
+  } catch(err) {
+    alert('저장 중 오류가 발생했습니다: ' + err.message);
   }
-
-  alert('고정 내역이 안전하게 저장되었습니다!');
-  await loadFixedItems();
 }
 
 function renderFixedItems(){
@@ -550,7 +557,7 @@ function renderFixedItems(){
     html += `
       <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
         <span class="muted" style="font-size:11px;">
-          ${hasSubs ? `🏷️ 세부항목 ${item.subItems.length개 등록됨` : '세부항목 없음'}
+          ${hasSubs ? `🏷️ 세부항목 ${item.subItems.length}개 등록됨` : '세부항목 없음'}
         </span>
         <button class="small" onclick="toggleSubManager(${index})" style="background:${hasSubs ? '#d1fae5' : '#e5e7eb'}; color:${hasSubs ? '#065f46' : '#374151'}; font-size:11px; padding:4px 8px; cursor:pointer;">
           ${item.showSubManager ? '세부항목 접기 ▲' : (hasSubs ? '세부항목 보기/관리 ▾' : '+ 세부항목 추가')}
@@ -901,13 +908,13 @@ async function loadGoals(){
 
 window.addEventListener('load', async () => {
   try{
-    changeMonth(currentYearMonth);
+    renderFixedItems(); // 먼저 기본 목록을 즉시 렌더링
     updatePresets();
-    await loadFixedItems();
-    console.log('Supabase 연결 및 고정 내역 로드 성공');
+    await loadFixedItems(); // DB 데이터 불러오기 시도
+    await loadAll();
+    console.log('초기화 완료');
   }catch(error){
     console.error(error);
-    alert('Supabase 연결에 문제가 있습니다.\n' + error.message);
   }
 });
 </script>
