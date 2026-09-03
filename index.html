@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1f2937">
 <meta name="description" content="우리 가족의 수입, 지출, 부채, 상여금을 관리하는 개인용 가계부">
-<title>우리가족 가계부</title>
+<title>우리가족 가계부 (업그레이드)</title>
 <link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -127,6 +127,10 @@ button.primary{
   font-weight:700;
   margin-top:10px
 }
+button.accent{
+  background:#059669;
+  color:white
+}
 button.small{
   border:0;
   border-radius:8px;
@@ -138,16 +142,21 @@ button.small{
 .debt{border-left:4px solid #ef4444}
 .income{border-left:4px solid #10b981}
 .expense{border-left:4px solid #3b82f6}
-.progress{
-  height:9px;
-  background:#e5e7eb;
-  border-radius:99px;
-  overflow:hidden
+.presets{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  margin-top:5px
 }
-.bar{
-  height:100%;
-  background:#10b981
+.chip{
+  background:#f3f4f6;
+  border:1px solid #d1d5db;
+  border-radius:6px;
+  padding:5px 8px;
+  font-size:11px;
+  cursor:pointer
 }
+.chip:hover{background:#e5e7eb}
 table{
   width:100%;
   border-collapse:collapse;
@@ -198,81 +207,45 @@ th,td{
 <section id="dash" class="section active">
 
 <div class="grid">
-
 <div class="card">
 <div class="muted">이번 달 수입</div>
 <div id="dashIncome" class="big green">0원</div>
 </div>
-
 <div class="card">
 <div class="muted">이번 달 지출</div>
 <div id="dashExpense" class="big red">0원</div>
 </div>
-
 <div class="card">
 <div class="muted">이번 달 잔액</div>
 <div id="dashBalance" class="big blue">0원</div>
 </div>
-
 <div class="card">
 <div class="muted">부채 잔액</div>
 <div id="dashDebt" class="big">0원</div>
 </div>
-
 </div>
 
+<!-- ⚡ 효율성 업그레이드: 고정지출 일괄 자동 반영 카드 -->
+<div class="card" style="background:#fdf2f8; border:1px solid #fbcfe8;">
+<h2 style="color:#be185d;">⚡ 고정 수입·지출 원클릭 반영</h2>
+<p class="muted" style="margin-bottom:10px;">매월 반복되는 고정 수입(480만)과 고정 지출(대출·카드·보험 등 488만)을 현재 날짜로 한 번에 입력합니다.</p>
+<button class="primary accent" onclick="batchAddFixedItems()">이번 달 고정내역 일괄 등록하기</button>
+</div>
 
 <div class="card">
-
 <h2>이번 달 고정지출 기준</h2>
-
-<div class="row">
-<span>부채 상환·이자</span>
-<b>약 223만원</b>
+<div class="row"><span>부채 상환·이자</span><b>약 223만원</b></div>
+<div class="row"><span>생활비·카드</span><b>약 235만원</b></div>
+<div class="row"><span>보험</span><b>약 24만원</b></div>
+<div class="row"><span>기타</span><b>약 6만원</b></div>
+<div class="row"><span>기준 합계</span><b>약 488만원</b></div>
 </div>
-
-<div class="row">
-<span>생활비·카드</span>
-<b>약 235만원</b>
-</div>
-
-<div class="row">
-<span>보험</span>
-<b>약 24만원</b>
-</div>
-
-<div class="row">
-<span>기타</span>
-<b>약 6만원</b>
-</div>
-
-<div class="row">
-<span>기준 합계</span>
-<b>약 488만원</b>
-</div>
-
-</div>
-
 
 <div class="card">
-
 <h2>월 목표</h2>
-
-<div class="row">
-<span>초과근무 수입 확보</span>
-<span>40~60만원</span>
-</div>
-
-<div class="row">
-<span>연 상여금</span>
-<span>약 800만원</span>
-</div>
-
-<div class="row">
-<span>상여금 사용 우선순위</span>
-<span>부채 → 비상금</span>
-</div>
-
+<div class="row"><span>초과근무 수입 확보</span><span>40~60만원</span></div>
+<div class="row"><span>연 상여금</span><span>약 800만원</span></div>
+<div class="row"><span>상여금 사용 우선순위</span><span>부채 → 비상금</span></div>
 </div>
 
 </section>
@@ -281,21 +254,22 @@ th,td{
 <section id="tx" class="section">
 
 <div class="card">
-
 <h2>수입·지출 추가</h2>
 
 <label>날짜</label>
 <input type="date" id="txDate">
 
 <label>구분</label>
-
-<select id="txType">
+<select id="txType" onchange="updatePresets()">
 <option value="income">수입</option>
 <option value="expense">지출</option>
 </select>
 
 <label>카테고리</label>
 <input id="txCategory" placeholder="예: 급여, 생활비, 보험, 공과금">
+<div class="presets" id="categoryPresets">
+  <!-- 자바스크립트로 동적 생성 -->
+</div>
 
 <label>내용</label>
 <input id="txMemo" placeholder="예: 국민카드 생활비">
@@ -304,16 +278,11 @@ th,td{
 <input type="number" id="txAmount" placeholder="원">
 
 <button class="primary" onclick="addTx()">저장</button>
-
 </div>
 
-
 <div class="card">
-
 <h2>최근 내역</h2>
-
 <div id="txList"></div>
-
 </div>
 
 </section>
@@ -322,32 +291,21 @@ th,td{
 <section id="debt" class="section">
 
 <div class="card">
-
 <h2>부채 추가</h2>
-
 <label>대출명</label>
 <input id="debtName" placeholder="예: 마이너스통장">
-
 <label>현재 원금</label>
 <input type="number" id="debtPrincipal">
-
 <label>금리(%)</label>
 <input type="number" step="0.01" id="debtRate">
-
 <label>월 납입액</label>
 <input type="number" id="debtPayment">
-
 <button class="primary" onclick="addDebt()">저장</button>
-
 </div>
 
-
 <div class="card">
-
 <h2>현재 부채</h2>
-
 <div id="debtList"></div>
-
 </div>
 
 </section>
@@ -356,23 +314,10 @@ th,td{
 <section id="goal" class="section">
 
 <div class="card">
-
 <h2>우리 가족 목표</h2>
-
-<div class="row">
-<span>🔴 1순위</span>
-<b>부채 줄이기</b>
-</div>
-
-<div class="row">
-<span>🟡 2순위</span>
-<b>비상금 모으기</b>
-</div>
-
-<div class="row">
-<span>🟢 3순위</span>
-<b>저축하기</b>
-</div>
+<div class="row"><span>🔴 1순위</span><b>부채 줄이기</b></div>
+<div class="row"><span>🟡 2순위</span><b>비상금 모으기</b></div>
+<div class="row"><span>🟢 3순위</span><b>저축하기</b></div>
 
 <label>이번 달 부채 추가상환 목표</label>
 <input type="number" id="goalDebt" placeholder="원">
@@ -381,27 +326,18 @@ th,td{
 <input type="number" id="goalEmergency" placeholder="원">
 
 <button class="primary" onclick="saveGoals()">목표 저장</button>
-
 <div id="goalView" style="margin-top:15px"></div>
-
 </div>
 
-
 <div class="card">
-
 <h2>상여금 약 800만원 사용 원칙</h2>
-
-<p class="muted">
-상여금은 생활비로 흡수하지 않고 부채 추가상환과 비상금 확보를 우선합니다.
-</p>
-
+<p class="muted">상여금은 생활비로 흡수하지 않고 부채 추가상환과 비상금 확보를 우선합니다.</p>
 </div>
 
 </section>
 
-
 <div class="footer">
-개인용 1차 버전 · 데이터는 연결한 Supabase에 저장됩니다.
+개인용 업그레이드 버전 · 데이터는 연결한 Supabase에 저장됩니다.[span_4](start_span)[span_4](end_span)
 </div>
 
 </div>
@@ -414,558 +350,273 @@ th,td{
 /* =========================================
    Supabase 자동 연결 설정
    ========================================= */
+const SUPABASE_URL = 'https://mqpgwpljdxrkzvxazxct.supabase.co';[span_5](start_span)[span_5](end_span)
+const SUPABASE_KEY = 'sb_publishable_JZ9BOEbRvsDN-9mHE4vhfg_i5LWvzTR';[span_6](start_span)[span_6](end_span)
 
-const SUPABASE_URL =
-'https://mqpgwpljdxrkzvxazxct.supabase.co';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);[span_7](start_span)[span_7](end_span)
 
-const SUPABASE_KEY =
-'sb_publishable_JZ9BOEbRvsDN-9mHE4vhfg_i5LWvzTR';
+const $ = id => document.getElementById(id);
+const won = n => (Number(n) || 0).toLocaleString('ko-KR') + '원';[span_8](start_span)[span_8](end_span)
 
-
-/* Supabase 클라이언트 생성 */
-
-const supabaseClient =
-window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const today = new Date().toISOString().slice(0,10);[span_9](start_span)[span_9](end_span)
+$('txDate').value = today;[span_10](start_span)[span_10](end_span)
 
 
 /* =========================================
-   기본 함수
+   카테고리 프리셋 설정
    ========================================= */
+const incomePresets = ['급여', '초과근무비', '와이프보탬', '상여금', '기타수입'];
+const expensePresets = ['주담대', '마통이자', '생활안정대출', '카니발할부', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '기타지출'];
 
-const $ = id => document.getElementById(id);
+function updatePresets(){
+  const type = $('txType').value;
+  const list = type === 'income' ? incomePresets : expensePresets;
+  const container = $('categoryPresets');
+  container.innerHTML = list.map(item => `<span class="chip" onclick="setCategory('${item}')">${item}</span>`).join('');
+}
 
-const won = n =>
-(Number(n) || 0).toLocaleString('ko-KR') + '원';
+function setCategory(cat){
+  $('txCategory').value = cat;
+}
 
-
-const today =
-new Date().toISOString().slice(0,10);
-
-$('txDate').value = today;
+// 초기 프리셋 로드
+window.addEventListener('DOMContentLoaded', () => {
+  updatePresets();
+});
 
 
 /* =========================================
    탭 이동
    ========================================= */
-
 function showTab(id,btn){
+  document.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
+  $(id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  btn.classList.add('active');
+}
 
-document
-.querySelectorAll('.section')
-.forEach(x =>
-x.classList.remove('active')
-);
 
-$(id).classList.add('active');
+/* =========================================
+   ⚡ 고정 수입·지출 일괄 등록 함수
+   ========================================= */
+async function batchAddFixedItems(){
+  if(!confirm('이번 달 고정 수입 및 지출 항목들을 일괄 등록하시겠습니까?')) return;
 
-document
-.querySelectorAll('.tab')
-.forEach(x =>
-x.classList.remove('active')
-);
+  const fixedItems = [
+    { type: 'income', category: '급여', memo: '기본급 및 수당', amount: 4800000 },
+    { type: 'expense', category: '주담대', memo: '신한 주택담보대출 이자/원금', amount: 1543361 },
+    { type: 'expense', category: '마통이자', memo: '마이너스통장 이자', amount: 189620 },
+    { type: 'expense', category: '생활안정대출', memo: '생활안정자금 상환', amount: 117035 },
+    { type: 'expense', category: '카니발할부', memo: '카니발 차량 할부(7.9%)', amount: 407096 },
+    { type: 'expense', category: '국민카드생활비', memo: '국민카드 생활비', amount: 1113588 },
+    { type: 'expense', category: '롯데카드', memo: '롯데카드 결제', amount: 472590 },
+    { type: 'expense', category: '보험료', memo: '가족 통합 보험료', amount: 240000 },
+    { type: 'expense', category: '공과금/통신', memo: '도시가스 및 통신비/관리비', amount: 350000 }
+  ];
 
-btn.classList.add('active');
+  const currentDate = $('txDate').value || today;
 
+  for(let item of fixedItems){
+    await supabaseClient.from('transactions').insert({
+      tx_date: currentDate,
+      type: item.type,
+      category: item.category,
+      memo: item.memo,
+      amount: item.amount
+    });
+  }
+
+  await loadAll();
+  alert('고정 수입 및 지출 내역이 성공적으로 일괄 등록되었습니다!');
 }
 
 
 /* =========================================
    수입·지출 추가
    ========================================= */
-
 async function addTx(){
+  const date = $('txDate').value;
+  const type = $('txType').value;
+  const category = $('txCategory').value.trim() || '미분류';
+  const memo = $('txMemo').value.trim();
+  const amount = Number($('txAmount').value);
 
-const date =
-$('txDate').value;
+  if(!date){ alert('날짜를 입력하세요.'); return; }
+  if(!amount || amount <= 0){ alert('금액을 입력하세요.'); return; }
 
-const type =
-$('txType').value;
+  const {error} = await supabaseClient.from('transactions').insert({
+    tx_date:date, type:type, category:category, memo:memo, amount:amount
+  });
 
-const category =
-$('txCategory').value.trim() || '미분류';
+  if(error){ alert('저장 실패: ' + error.message); return; }
 
-const memo =
-$('txMemo').value.trim();
-
-const amount =
-Number($('txAmount').value);
-
-
-if(!date){
-alert('날짜를 입력하세요.');
-return;
-}
-
-if(!amount || amount <= 0){
-alert('금액을 입력하세요.');
-return;
-}
-
-
-const {error} =
-await supabaseClient
-.from('transactions')
-.insert({
-
-tx_date:date,
-type:type,
-category:category,
-memo:memo,
-amount:amount
-
-});
-
-
-if(error){
-
-alert('저장 실패: ' + error.message);
-
-return;
-
-}
-
-
-$('txAmount').value='';
-$('txMemo').value='';
-
-await loadAll();
-
-alert('저장되었습니다.');
-
+  $('txAmount').value='';
+  $('txMemo').value='';
+  await loadAll();
+  alert('저장되었습니다.');
 }
 
 
 /* =========================================
    부채 추가
    ========================================= */
-
 async function addDebt(){
+  const name = $('debtName').value.trim();
+  const principal = Number($('debtPrincipal').value);
+  const rate = Number($('debtRate').value) || 0;
+  const payment = Number($('debtPayment').value) || 0;
 
-const name =
-$('debtName').value.trim();
+  if(!name){ alert('대출명을 입력하세요.'); return; }
+  if(!principal || principal <= 0){ alert('현재 원금을 입력하세요.'); return; }
 
-const principal =
-Number($('debtPrincipal').value);
+  const {error} = await supabaseClient.from('debts').insert({
+    name:name, principal:principal, rate:rate, monthly_payment:payment
+  });
 
-const rate =
-Number($('debtRate').value) || 0;
+  if(error){ alert('저장 실패: ' + error.message); return; }
 
-const payment =
-Number($('debtPayment').value) || 0;
-
-
-if(!name){
-
-alert('대출명을 입력하세요.');
-
-return;
-
-}
-
-if(!principal || principal <= 0){
-
-alert('현재 원금을 입력하세요.');
-
-return;
-
-}
-
-
-const {error} =
-await supabaseClient
-.from('debts')
-.insert({
-
-name:name,
-principal:principal,
-rate:rate,
-monthly_payment:payment
-
-});
-
-
-if(error){
-
-alert('저장 실패: ' + error.message);
-
-return;
-
-}
-
-
-$('debtName').value='';
-$('debtPrincipal').value='';
-$('debtRate').value='';
-$('debtPayment').value='';
-
-await loadAll();
-
-alert('저장되었습니다.');
-
+  $('debtName').value='';
+  $('debtPrincipal').value='';
+  $('debtRate').value='';
+  $('debtPayment').value='';
+  await loadAll();
+  alert('저장되었습니다.');
 }
 
 
 /* =========================================
    데이터 삭제
    ========================================= */
-
 async function deleteRow(table,id){
-
-if(!confirm('삭제할까요?'))
-return;
-
-
-const {error} =
-await supabaseClient
-.from(table)
-.delete()
-.eq('id',id);
-
-
-if(error){
-
-alert('삭제 실패: ' + error.message);
-
-return;
-
-}
-
-
-await loadAll();
-
+  if(!confirm('삭제할까요?')) return;
+  const {error} = await supabaseClient.from(table).delete().eq('id',id);
+  if(error){ alert('삭제 실패: ' + error.message); return; }
+  await loadAll();
 }
 
 
 /* =========================================
    전체 데이터 불러오기
    ========================================= */
-
 async function loadAll(){
-
-await Promise.all([
-
-loadTx(),
-loadDebt(),
-loadGoals()
-
-]);
-
+  await Promise.all([loadTx(), loadDebt(), loadGoals()]);
 }
 
 
 /* =========================================
    수입·지출 불러오기
    ========================================= */
-
 async function loadTx(){
+  const {data,error} = await supabaseClient.from('transactions').select('*').order('tx_date',{ascending:false}).limit(100);
 
-const {data,error} =
-await supabaseClient
-.from('transactions')
-.select('*')
-.order('tx_date',{
-ascending:false
-})
-.limit(100);
+  if(error){
+    console.error('transactions:',error);
+    $('txList').innerHTML = '<div class="empty">수입·지출 데이터를 불러오지 못했습니다.</div>';
+    return;
+  }
 
+  let income=0;
+  let expense=0;
+  let html='';
 
-if(error){
+  (data || []).forEach(x=>{
+    if(x.type==='income') income += Number(x.amount);
+    else expense += Number(x.amount);
 
-console.error('transactions:',error);
+    html += `
+    <div class="row ${x.type}">
+      <div>
+        <b>${x.category}</b>
+        <div class="muted">${x.tx_date} · ${x.memo || ''}</div>
+      </div>
+      <div>
+        <span class="amount">${x.type==='income'?'+':'-'}${won(x.amount)}</span>
+        <br>
+        <button class="small danger" onclick="deleteRow('transactions','${x.id}')">삭제</button>
+      </div>
+    </div>`;
+  });
 
-$('txList').innerHTML =
-'<div class="empty">수입·지출 데이터를 불러오지 못했습니다.</div>';
-
-return;
-
-}
-
-
-let income=0;
-let expense=0;
-let html='';
-
-
-(data || []).forEach(x=>{
-
-if(x.type==='income')
-income += Number(x.amount);
-else
-expense += Number(x.amount);
-
-
-html += `
-
-<div class="row ${x.type}">
-
-<div>
-
-<b>${x.category}</b>
-
-<div class="muted">
-${x.tx_date} · ${x.memo || ''}
-</div>
-
-</div>
-
-
-<div>
-
-<span class="amount">
-${x.type==='income'?'+':'-'}${won(x.amount)}
-</span>
-
-<br>
-
-<button
-class="small danger"
-onclick="deleteRow('transactions','${x.id}')">
-삭제
-</button>
-
-</div>
-
-</div>
-
-`;
-
-});
-
-
-$('txList').innerHTML =
-html ||
-'<div class="empty">등록된 내역이 없습니다.</div>';
-
-
-$('dashIncome').textContent =
-won(income);
-
-$('dashExpense').textContent =
-won(expense);
-
-$('dashBalance').textContent =
-won(income-expense);
-
+  $('txList').innerHTML = html || '<div class="empty">등록된 내역이 없습니다.</div>';
+  $('dashIncome').textContent = won(income);
+  $('dashExpense').textContent = won(expense);
+  $('dashBalance').textContent = won(income-expense);
 }
 
 
 /* =========================================
    부채 불러오기
    ========================================= */
-
 async function loadDebt(){
+  const {data,error} = await supabaseClient.from('debts').select('*').order('created_at',{ascending:true});
 
-const {data,error} =
-await supabaseClient
-.from('debts')
-.select('*')
-.order('created_at',{
-ascending:true
-});
+  if(error){
+    console.error('debts:',error);
+    $('debtList').innerHTML = '<div class="empty">부채 데이터를 불러오지 못했습니다.</div>';
+    return;
+  }
 
+  let total=0;
+  let html='';
 
-if(error){
+  (data || []).forEach(x=>{
+    total += Number(x.principal);
+    html += `
+    <div class="row debt">
+      <div>
+        <b>${x.name}</b>
+        <div class="muted">금리 ${x.rate}% · 월 ${won(x.monthly_payment)}</div>
+      </div>
+      <div>
+        <span class="amount">${won(x.principal)}</span>
+        <br>
+        <button class="small danger" onclick="deleteRow('debts','${x.id}')">삭제</button>
+      </div>
+    </div>`;
+  });
 
-console.error('debts:',error);
-
-$('debtList').innerHTML =
-'<div class="empty">부채 데이터를 불러오지 못했습니다.</div>';
-
-return;
-
-}
-
-
-let total=0;
-let html='';
-
-
-(data || []).forEach(x=>{
-
-total += Number(x.principal);
-
-
-html += `
-
-<div class="row debt">
-
-<div>
-
-<b>${x.name}</b>
-
-<div class="muted">
-금리 ${x.rate}% · 월 ${won(x.monthly_payment)}
-</div>
-
-</div>
-
-
-<div>
-
-<span class="amount">
-${won(x.principal)}
-</span>
-
-<br>
-
-<button
-class="small danger"
-onclick="deleteRow('debts','${x.id}')">
-삭제
-</button>
-
-</div>
-
-</div>
-
-`;
-
-});
-
-
-$('debtList').innerHTML =
-html ||
-'<div class="empty">등록된 부채가 없습니다.</div>';
-
-
-$('dashDebt').textContent =
-won(total);
-
+  $('debtList').innerHTML = html || '<div class="empty">등록된 부채가 없습니다.</div>';
+  $('dashDebt').textContent = won(total);
 }
 
 
 /* =========================================
-   목표 저장
+   목표 저장 및 불러오기
    ========================================= */
-
 async function saveGoals(){
+  const debt = Number($('goalDebt').value) || 0;
+  const emergency = Number($('goalEmergency').value) || 0;
 
-const debt =
-Number($('goalDebt').value) || 0;
-
-const emergency =
-Number($('goalEmergency').value) || 0;
-
-
-const {error} =
-await supabaseClient
-.from('goals')
-.upsert({
-
-id:1,
-debt_target:debt,
-emergency_target:emergency
-
-});
-
-
-if(error){
-
-alert('목표 저장 실패: ' + error.message);
-
-return;
-
+  const {error} = await supabaseClient.from('goals').upsert({ id:1, debt_target:debt, emergency_target:emergency });
+  if(error){ alert('목표 저장 실패: ' + error.message); return; }
+  await loadGoals();
+  alert('목표가 저장되었습니다.');
 }
-
-
-await loadGoals();
-
-alert('목표가 저장되었습니다.');
-
-}
-
-
-/* =========================================
-   목표 불러오기
-   ========================================= */
 
 async function loadGoals(){
+  const {data,error} = await supabaseClient.from('goals').select('*').eq('id',1).maybeSingle();
+  if(error) return;
 
-const {data,error} =
-await supabaseClient
-.from('goals')
-.select('*')
-.eq('id',1)
-.maybeSingle();
-
-
-if(error){
-
-console.error('goals:',error);
-
-return;
-
+  if(data){
+    $('goalDebt').value = data.debt_target || '';
+    $('goalEmergency').value = data.emergency_target || '';
+    $('goalView').innerHTML = `
+    <div class="row"><span>부채 추가상환 목표</span><b>${won(data.debt_target)}</b></div>
+    <div class="row"><span>비상금 목표</span><b>${won(data.emergency_target)}</b></div>`;
+  }
 }
 
-
-if(data){
-
-$('goalDebt').value =
-data.debt_target || '';
-
-$('goalEmergency').value =
-data.emergency_target || '';
-
-
-$('goalView').innerHTML = `
-
-<div class="row">
-
-<span>부채 추가상환 목표</span>
-
-<b>
-${won(data.debt_target)}
-</b>
-
-</div>
-
-
-<div class="row">
-
-<span>비상금 목표</span>
-
-<b>
-${won(data.emergency_target)}
-</b>
-
-</div>
-
-`;
-
-}
-
-}
-
-
-/* =========================================
-   앱 시작
-   ========================================= */
-
-window.addEventListener('load',async()=>{
-
-try{
-
-await loadAll();
-
-console.log('Supabase 연결 성공');
-
-}catch(error){
-
-console.error(error);
-
-alert(
-'Supabase 연결에 문제가 있습니다.\n' +
-error.message
-);
-
-}
-
+window.addEventListener('load', async()=>{
+  try{
+    await loadAll();
+    console.log('Supabase 연결 성공');[span_11](start_span)[span_11](end_span)
+  }catch(error){
+    console.error(error);
+    alert('Supabase 연결에 문제가 있습니다.\n' + error.message);
+  }
 });
-
 </script>
 
 </body>
- </html>
+</html>
+
