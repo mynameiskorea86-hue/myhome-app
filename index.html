@@ -246,37 +246,41 @@ th,td{
 <p class="muted" style="margin-bottom:10px;">금액/날짜 수정 후 '고정 내역 저장'을 누르면 영구 적용됩니다.</p>
 <div id="fixedItemsList"></div>
 
-<!-- 새로운 고정 항목 추가 영역 -->
+<!-- 새로운 고정 항목 추가 영역 (버튼 토글형) -->
 <div style="margin-top:20px; padding-top:15px; border-top:2px dashed #bbf7d0;">
-  <b style="font-size:13px; color:#047857;">➕ 새로운 고정 수입/지출 항목 추가</b>
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
-    <div>
-      <label style="margin:0 0 2px 0; font-size:10px;">구분</label>
-      <select id="newFixedType" style="padding:6px; font-size:12px;">
-        <option value="expense">지출</option>
-        <option value="income">수입</option>
-      </select>
+  <button class="primary small" id="toggleNewFixedBtn" onclick="toggleNewFixedForm()" style="background:#047857; width:100%; font-size:13px; padding:10px;">➕ 새로운 고정 수입/지출 항목 추가</button>
+  
+  <div id="newFixedFormContainer" style="display:none; margin-top:12px; background:#ffffff; padding:12px; border-radius:10px; border:1px solid #bbf7d0;">
+    <b style="font-size:13px; color:#047857; display:block; margin-bottom:8px;">새 고정 항목 세부 정보 입력</b>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div>
+        <label style="margin:0 0 2px 0; font-size:10px;">구분</label>
+        <select id="newFixedType" style="padding:6px; font-size:12px;">
+          <option value="expense">지출</option>
+          <option value="income">수입</option>
+        </select>
+      </div>
+      <div>
+        <label style="margin:0 0 2px 0; font-size:10px;">일자 (일)</label>
+        <input type="number" id="newFixedDay" placeholder="예: 25" min="1" max="31" style="padding:6px; font-size:12px;">
+      </div>
     </div>
-    <div>
-      <label style="margin:0 0 2px 0; font-size:10px;">일자 (일)</label>
-      <input type="number" id="newFixedDay" placeholder="예: 25" min="1" max="31" style="padding:6px; font-size:12px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+      <div>
+        <label style="margin:0 0 2px 0; font-size:10px;">항목명 (카테고리)</label>
+        <input type="text" id="newFixedCategory" placeholder="예: 보험료" style="padding:6px; font-size:12px;">
+      </div>
+      <div>
+        <label style="margin:0 0 2px 0; font-size:10px;">메모</label>
+        <input type="text" id="newFixedMemo" placeholder="예: 가족 보험" style="padding:6px; font-size:12px;">
+      </div>
     </div>
+    <div style="margin-top:8px;">
+      <label style="margin:0 0 2px 0; font-size:10px;">금액 (세부항목이 없을 경우 입력)</label>
+      <input type="number" id="newFixedAmount" placeholder="원" style="padding:6px; font-size:12px;">
+    </div>
+    <button class="primary small" onclick="addNewFixedItem()" style="background:#047857; width:100%; margin-top:10px;">고정 항목 추가하기</button>
   </div>
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
-    <div>
-      <label style="margin:0 0 2px 0; font-size:10px;">항목명 (카테고리)</label>
-      <input type="text" id="newFixedCategory" placeholder="예: 보험료" style="padding:6px; font-size:12px;">
-    </div>
-    <div>
-      <label style="margin:0 0 2px 0; font-size:10px;">메모</label>
-      <input type="text" id="newFixedMemo" placeholder="예: 가족 보험" style="padding:6px; font-size:12px;">
-    </div>
-  </div>
-  <div style="margin-top:8px;">
-    <label style="margin:0 0 2px 0; font-size:10px;">금액 (세부항목이 없을 경우 입력)</label>
-    <input type="number" id="newFixedAmount" placeholder="원" style="padding:6px; font-size:12px;">
-  </div>
-  <button class="primary small" onclick="addNewFixedItem()" style="background:#047857; width:100%; margin-top:8px;">고정 항목 추가하기</button>
 </div>
 
 <div style="display:flex; gap:8px; margin-top:15px;">
@@ -462,6 +466,21 @@ function changeMonth(ym){
 
   renderFixedItems();
   loadAll();
+}
+
+// 새로운 고정 항목 입력창 토글 함수
+function toggleNewFixedForm() {
+  const container = $('newFixedFormContainer');
+  const btn = $('toggleNewFixedBtn');
+  if (container.style.display === 'none') {
+    container.style.display = 'block';
+    btn.textContent = '✖ 입력창 닫기';
+    btn.style.background = '#6b7280';
+  } else {
+    container.style.display = 'none';
+    btn.textContent = '➕ 새로운 고정 수입/지출 항목 추가';
+    btn.style.background = '#047857';
+  }
 }
 
 // Supabase에서 고정 내역 불러오기
@@ -693,6 +712,9 @@ function addNewFixedItem(){
   $('newFixedMemo').value = '';
   $('newFixedDay').value = '';
   $('newFixedAmount').value = '';
+
+  // 추가 완료 후 입력창 자동으로 닫기
+  toggleNewFixedForm();
 
   renderFixedItems();
   alert('고정 항목이 추가되었습니다. 하단의 [수정된 고정 내역 저장]을 눌러야 영구 저장됩니다.');
@@ -934,3 +956,4 @@ window.addEventListener('load', async () => {
 
 </body>
 </html>
+
