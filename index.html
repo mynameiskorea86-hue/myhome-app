@@ -258,19 +258,75 @@ th,td{
 </div>
 </div>
 
-<!-- 📅 고정 수입·지출 예정일 및 세부항목 관리 -->
+<!-- 🎁 [방법 2+3 조합] 상여금 및 수당 간편 스케줄러 카드 -->
+<div class="card" style="background:#fdf4ff; border:1px solid #f5d0fe;">
+  <div onclick="toggleBonusCardContent()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+    <h2 style="color:#86198f; margin:0;">🎁 연간 상여금·수당 간편 스케줄러</h2>
+    <span id="bonusCardToggleText" style="font-size:12px; font-weight:bold; color:#86198f; background:#fae8ff; padding:4px 8px; border-radius:6px;">접기 ▲</span>
+  </div>
+
+  <div id="bonusCardBody" style="margin-top:12px; display:block;">
+    <p class="muted" style="margin-bottom:12px;">원하시는 수당의 자동 계산 금액을 확인 후, **금액을 직접 수정(오버라이드)**하거나 그대로 현재 조회 중인 월에 즉시 반영할 수 있습니다.</p>
+    
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      
+      <!-- 정근수당 -->
+      <div style="background:white; padding:10px; border-radius:10px; border:1px solid #f5d0fe; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <div>
+          <b style="font-size:13px; color:#86198f;">정근수당 (1월, 7월)</b>
+          <div class="muted">봉급(4,110,500) × 50%</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <input type="number" id="bonus_junggeun" value="2055250" style="width:110px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
+          <button class="small" onclick="quickApplyBonus('정근수당', '정근수당 지급', $('bonus_junggeun').value)" style="background:#86198f; color:white; font-size:11px; padding:6px 10px;">현재 월 반영</button>
+        </div>
+      </div>
+
+      <!-- 명절휴가비 -->
+      <div style="background:white; padding:10px; border-radius:10px; border:1px solid #f5d0fe; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <div>
+          <b style="font-size:13px; color:#86198f;">명절휴가비 (설·추석 해당월)</b>
+          <div class="muted">봉급(4,110,500) × 60%</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <input type="number" id="bonus_holiday" value="2466300" style="width:110px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
+          <button class="small" onclick="quickApplyBonus('명절휴가비', '명절휴가비 지급', $('bonus_holiday').value)" style="background:#86198f; color:white; font-size:11px; padding:6px 10px;">현재 월 반영</button>
+        </div>
+      </div>
+
+      <!-- 성과상여금 -->
+      <div style="background:white; padding:10px; border-radius:10px; border:1px solid #f5d0fe; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <div>
+          <b style="font-size:13px; color:#86198f;">성과상여금 (3월)</b>
+          <div class="muted">기준(3,444,700) × <span id="perfRateText">130%</span></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <select id="perfSelect" onchange="updatePerfAmount()" style="width:80px; padding:6px; font-size:11px;">
+            <option value="4478110">130%</option>
+            <option value="3720276">108%</option>
+          </select>
+          <input type="number" id="bonus_perf" value="4478110" style="width:110px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
+          <button class="small" onclick="quickApplyBonus('성과상여금', '성과상여금 지급', $('bonus_perf').value)" style="background:#86198f; color:white; font-size:11px; padding:6px 10px;">현재 월 반영</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- 📅 고정 수입·지출 예정일 및 세부항목 관리 (오직 대출, 보험, 카드 등 일반 고정지출만 관리) -->
 <div class="card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
   <div onclick="toggleFixedCardContent()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
-    <h2 style="color:#047857; margin:0;">📅 고정 수입·지출 예정일 관리</h2>
+    <h2 style="color:#047857; margin:0;">📅 일반 고정 수입·지출 관리 (대출/보험/카드 등)</h2>
     <span id="fixedCardToggleText" style="font-size:12px; font-weight:bold; color:#047857; background:#d1fae5; padding:4px 8px; border-radius:6px;">접기 ▲</span>
   </div>
 
   <div id="fixedCardBody" style="margin-top:12px; display:block;">
-    <p class="muted" style="margin-bottom:10px;">금액/날짜 수정 후 '고정 내역 저장'을 누르면 영구 적용됩니다.</p>
+    <p class="muted" style="margin-bottom:10px;">매달 반복되는 고정 지출 및 기본 급여 내역을 관리합니다.</p>
     <div id="fixedItemsList"></div>
 
     <div style="margin-top:20px; padding-top:15px; border-top:2px dashed #bbf7d0;">
-      <button class="primary small" id="toggleNewFixedBtn" onclick="toggleNewFixedForm()" style="background:#047857; width:100%; font-size:13px; padding:10px;">➕ 새로운 고정 수입/지출 항목 추가</button>
+      <button class="primary small" id="toggleNewFixedBtn" onclick="toggleNewFixedForm()" style="background:#047857; width:100%; font-size:13px; padding:10px;">➕ 새로운 고정 항목 추가</button>
       
       <div id="newFixedFormContainer" style="display:none; margin-top:12px; background:#ffffff; padding:12px; border-radius:10px; border:1px solid #bbf7d0;">
         <b style="font-size:13px; color:#047857; display:block; margin-bottom:8px;">새 고정 항목 세부 정보 입력</b>
@@ -278,8 +334,8 @@ th,td{
           <div>
             <label style="margin:0 0 2px 0; font-size:10px;">구분</label>
             <select id="newFixedType" style="padding:6px; font-size:12px;">
-              <option value="expense">지출</option>
               <option value="income">수입</option>
+              <option value="expense">지출</option>
             </select>
           </div>
           <div>
@@ -290,15 +346,15 @@ th,td{
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
           <div>
             <label style="margin:0 0 2px 0; font-size:10px;">항목명 (카테고리)</label>
-            <input type="text" id="newFixedCategory" placeholder="예: 보험료" style="padding:6px; font-size:12px;">
+            <input type="text" id="newFixedCategory" placeholder="예: 주담대" style="padding:6px; font-size:12px;">
           </div>
           <div>
             <label style="margin:0 0 2px 0; font-size:10px;">메모</label>
-            <input type="text" id="newFixedMemo" placeholder="예: 가족 보험" style="padding:6px; font-size:12px;">
+            <input type="text" id="newFixedMemo" placeholder="예: 주택담보대출 이자" style="padding:6px; font-size:12px;">
           </div>
         </div>
         <div style="margin-top:8px;">
-          <label style="margin:0 0 2px 0; font-size:10px;">금액 (세부항목이 없을 경우 입력)</label>
+          <label style="margin:0 0 2px 0; font-size:10px;">금액</label>
           <input type="number" id="newFixedAmount" placeholder="원" style="padding:6px; font-size:12px;">
         </div>
         <button class="primary small" onclick="addNewFixedItem()" style="background:#047857; width:100%; margin-top:10px;">고정 항목 추가하기</button>
@@ -325,7 +381,7 @@ th,td{
 <div class="card">
 <h2>월 목표</h2>
 <div class="row"><span>초과근무 수입 확보</span><span>40~60만원</span></div>
-<div class="row"><span>연 상여금</span><span>약 800만원</span></div>
+<div class="row"><span>연 상여금 및 수당</span><span>체계적 관리</span></div>
 <div class="row"><span>상여금 사용 우선순위</span><span>부채 → 비상금</span></div>
 </div>
 
@@ -410,8 +466,8 @@ th,td{
 </div>
 
 <div class="card">
-<h2>상여금 약 800만원 사용 원칙</h2>
-<p class="muted">상여금은 생활비로 흡수하지 않고 부채 추가상환과 비상금 확보를 우선합니다.</p>
+<h2>상여금 및 수당 사용 원칙</h2>
+<p class="muted">수당과 상여금은 생활비로 흡수하지 않고 부채 추가상환과 비상금 확보를 우선합니다.</p>
 </div>
 
 </section>
@@ -440,11 +496,12 @@ let currentYearMonth = today.slice(0, 7);
 $('monthSelector').value = currentYearMonth;
 $('txDate').value = today;
 
-const incomePresets = ['급여', '와이프보탬', '상여금', '기타수입'];
+const incomePresets = ['급여', '주담대보탬', '정근수당', '명절휴가비', '성과상여금', '상여금', '기타수입'];
 const expensePresets = ['주담대', '마통이자', '생활안정대출', '카니발할부', '주유비', '담배값', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '기타지출'];
 
 const defaultFixedItems = [
   { type: 'income', category: '급여', memo: '기본급 및 수당', day: '25', amount: 4800000, subItems: [] },
+  { type: 'income', category: '주담대보탬', memo: '주담대 보탬 수입', day: '25', amount: 450000, subItems: [] },
   { type: 'expense', category: '주담대', memo: '신한 주택담보대출 이자/원금', day: '25', amount: 1543361, subItems: [] },
   { type: 'expense', category: '마통이자', memo: '마이너스통장 이자', day: '10', amount: 189620, subItems: [] },
   { type: 'expense', category: '생활안정대출', memo: '생활안정자금 상환', day: '10', amount: 117035, subItems: [] },
@@ -485,6 +542,48 @@ function toggleFixedCardContent() {
   }
 }
 
+function toggleBonusCardContent() {
+  const body = $('bonusCardBody');
+  const text = $('bonusCardToggleText');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    text.textContent = '접기 ▲';
+  } else {
+    body.style.display = 'none';
+    text.textContent = '펼치기 ▼';
+  }
+}
+
+function updatePerfAmount(){
+  const val = $('perfSelect').value;
+  $('bonus_perf').value = val;
+  $('perfRateText').textContent = val === '4478110' ? '130%' : '108%';
+}
+
+async function quickApplyBonus(category, memo, amountVal){
+  const amt = Number(amountVal);
+  if(!amt || amt <= 0){ alert('올바른 금액을 입력하세요.'); return; }
+  
+  const targetDate = currentYearMonth + '-10'; // 기본 10일자 지급 가정, 필요시 수입/지출 탭에서 변경 가능
+  if(!confirm(`[${currentYearMonth.replace('-', '년 ')}월 10일]에 '${category}' ${won(amt)}을(를) 수입으로 즉시 반영하시겠습니까?`)) return;
+
+  const { error } = await supabaseClient.from('transactions').insert({
+    tx_date: targetDate,
+    type: 'income',
+    category: category,
+    memo: memo,
+    amount: amt
+  });
+
+  if(error){
+    alert('반영 실패: ' + error.message);
+    return;
+  }
+
+  alert(`${category}이(가) 현재 조회 중인 월 가계부에 성공적으로 반영되었습니다!`);
+  await loadAll();
+}
+
 function getFormattedDate(ym, day){
   const paddedDay = String(day).padStart(2, '0');
   return `${ym}-${paddedDay}`;
@@ -512,7 +611,7 @@ function toggleNewFixedForm() {
     btn.style.background = '#6b7280';
   } else {
     container.style.display = 'none';
-    btn.textContent = '➕ 새로운 고정 수입/지출 항목 추가';
+    btn.textContent = '➕ 새로운 고정 항목 추가';
     btn.style.background = '#047857';
   }
 }
@@ -549,7 +648,7 @@ async function loadFixedItems(){
 }
 
 async function saveFixedItemsToDB(){
-  if(!confirm('현재 수정된 고정 수입·지출 내역과 세부항목을 영구 저장하시겠습니까?')) return;
+  if(!confirm('현재 수정된 일반 고정 수입·지출 내역과 금액을 영구 저장하시겠습니까?')) return;
 
   try {
     for(let item of fixedItems){
@@ -602,8 +701,8 @@ function renderFixedItems(){
           <input type="date" value="${fullDate}" onchange="updateFixedItemDate(${index}, this.value)" style="padding: 6px; font-size: 12px;">
         </div>
         <div style="flex: 1;">
-          <label style="margin:0 0 2px 0; font-size:10px;">금액 ${hasSubs ? '(세부항목 합산)' : '(수정가능)'}</label>
-          <input type="number" value="${item.amount}" ${hasSubs ? 'readonly style="background:#f9fafb; font-weight:bold; padding:6px; font-size:12px;"' : 'onchange="updateFixedItem(${index}, \'amount\', Number(this.value))" style="padding: 6px; font-size: 12px; font-weight: bold;"'}>
+          <label style="margin:0 0 2px 0; font-size:10px;">금액 ${hasSubs ? '(세부항목 합산)' : '(직접 수정 가능)'}</label>
+          <input type="number" value="${item.amount}" ${hasSubs ? 'readonly style="background:#f9fafb; font-weight:bold; padding:6px; font-size:12px;"' : 'onchange="updateFixedItem(${index}, \'amount\', Number(this.value))" style="padding: 6px; font-size: 12px; font-weight: bold; color: #059669;"'}>
         </div>
       </div>`;
 
@@ -637,7 +736,7 @@ function renderFixedItems(){
 
       html += `
         <div style="display: flex; gap: 4px; margin-top: 6px; padding-left: 10px;">
-          <input type="text" id="subName_${index}" placeholder="세부항목명 (예: 남편보험)" style="padding:4px; font-size:11px; flex:2;">
+          <input type="text" id="subName_${index}" placeholder="세부항목명" style="padding:4px; font-size:11px; flex:2;">
           <input type="number" id="subAmount_${index}" placeholder="금액" style="padding:4px; font-size:11px; flex:1;">
           <button class="small" onclick="addSubItem(${index})" style="background:#047857; color:white; font-size:11px; padding:4px 8px;">추가</button>
         </div>
@@ -714,18 +813,8 @@ function updateFixedItem(index, field, value){
 
 function updateFixedItemDate(index, value){
   if(!value) return;
-  let dayStr = '';
-  if(value.includes('-')){
-    const parts = value.split('-');
-    if(parts.length >= 3) dayStr = parts[2];
-  } else {
-    const clean = value.replace(/[^0-9]/g, '');
-    if(clean.length >= 8) dayStr = clean.slice(6, 8);
-  }
-  if(dayStr){
-    fixedItems[index].day = String(Number(dayStr)).padStart(2, '0');
-    renderFixedItems();
-  }
+  fixedItems[index].day = value.slice(8, 10);
+  renderFixedItems();
 }
 
 async function addNewFixedItem(){
@@ -772,7 +861,6 @@ async function deleteFixedItem(index){
   await loadAll();
 }
 
-// 🔄 체크 상태 동기화 및 가계부 반영/제외 로직
 async function applyCheckedFixedItems(){
   if(!confirm(`현재 체크된 고정 내역을 [${currentYearMonth.replace('-', '년 ')}월] 가계부에 동기화(반영/제외)하시겠습니까?`)) return;
 
@@ -930,12 +1018,12 @@ async function loadTx(){
     return;
   }
 
-  // 🔄 현재 월 트랜잭션과 고정 항목을 비교하여 체크 상태 자동 동기화
   fixedItems.forEach((item, index) => {
     const fixedTag = `(고정ID:${index})`;
     const matchedTx = (data || []).find(tx => tx.memo && tx.memo.includes(fixedTag));
     if(matchedTx){
       item.checked = true;
+      item.amount = Number(matchedTx.amount);
       if(item.subItems && item.subItems.length > 0){
         item.subItems.forEach(sub => sub.checked = true);
       }
@@ -1112,7 +1200,6 @@ function updateRealtimeDecisionLogic(currentBalance){
   $('dashExtraRepaymentFund').textContent = won(extraFund);
 
   const debtTarget = Number(cachedGoals.goalDebt || cachedGoals.debt_target) || 0;
-  // ... (이하 동일)
   if(debtTarget > 0){
     const percent = Math.min(100, Math.round((extraFund / debtTarget) * 100));
     $('dashGoalProgress').textContent = `${won(extraFund)} / ${won(debtTarget)} (${percent}% 달성)`;
@@ -1134,3 +1221,4 @@ window.addEventListener('load', async () => {
 
 </body>
 </html>
+
