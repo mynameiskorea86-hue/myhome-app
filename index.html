@@ -418,9 +418,21 @@ th,td{
   </div>
 </div>
 
-<!-- 📊 이번 달 지출 카테고리별 통계표 -->
+<!-- 📊 이번 달 지출 카테고리별 통계 -->
 <div class="card">
   <h2>📊 이번 달 지출 카테고리별 통계</h2>
+  
+  <!-- 둥근 시간표 형태의 원형 도넛 차트 및 범례 -->
+  <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid #eee;">
+    <div id="donutChart" style="width:160px; height:160px; border-radius:50%; background:#e5e7eb; position:relative; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+      <div style="position:absolute; inset:42px; background:white; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+        <span style="font-size:10px; color:#6b7280;">총 지출</span>
+        <span id="donutTotalAmount" style="font-size:12px; font-weight:800; color:#111827;">0원</span>
+      </div>
+    </div>
+    <div id="donutLegend" style="display:flex; flex-wrap:wrap; gap:6px 12px; justify-content:center; margin-top:12px;"></div>
+  </div>
+
   <div id="categoryStatsContent"></div>
 </div>
 
@@ -546,13 +558,13 @@ function formatInputComma(input){
   input.value = Number(cleanVal).toLocaleString('ko-KR');
 }
 
-// 1. 수입·지출 직접 입력용 카테고리 (깔끔한 일반 가계부 분류)
+// 1. 수입·지출 직접 입력용 카테고리 (사진 속 신규 카테고리 반영)
 let txIncomeCategories = JSON.parse(localStorage.getItem('family_tx_income_cats')) || ['급여', '부수입', '상여/수당', '기타수입'];
-let txExpenseCategories = JSON.parse(localStorage.getItem('family_tx_expense_cats')) || ['생활비', '식비', '교통/주유', '대출상환', '보험료', '공과금/통신', '쇼핑/문화', '기타지출'];
+let txExpenseCategories = JSON.parse(localStorage.getItem('family_tx_expense_cats')) || ['보험료', '기타지출', '대출이자납부', '할부금', '통신비', '신용카드납부', '공과금', '주택담보대출'];
 
-// 2. 고정 항목 분류용 카테고리 (항목별 구분/통계용)
+// 2. 고정 항목 분류용 카테고리 (사진 속 신규 카테고리 반영)
 let incomeCategories = JSON.parse(localStorage.getItem('family_income_cats')) || ['급여', '주담대보탬', '정근수당', '명절휴가비', '성과상여금', '상여금', '기타수입'];
-let expenseCategories = JSON.parse(localStorage.getItem('family_expense_cats')) || ['주담대', '마통이자', '생활안정대출', '카니발할부', '주유비', '담배값', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '기타지출'];
+let expenseCategories = JSON.parse(localStorage.getItem('family_expense_cats')) || ['보험료', '기타지출', '대출이자납부', '할부금', '통신비', '신용카드납부', '공과금', '주택담보대출'];
 
 function saveTxCategories(){
   localStorage.setItem('family_tx_income_cats', JSON.stringify(txIncomeCategories));
@@ -656,12 +668,12 @@ $('txDate').value = today;
 const defaultFixedItems = [
   { type: 'income', title: '급여', category: '급여', memo: '기본급 및 수당', day: '25', amount: 4800000, subItems: [] },
   { type: 'income', title: '주담대보탬', category: '급여', memo: '주담대 보탬 수입', day: '25', amount: 450000, subItems: [] },
-  { type: 'expense', title: '주담대', category: '주담대', memo: '신한 주택담보대출 이자/원금', day: '25', amount: 1543361, subItems: [] },
-  { type: 'expense', title: '마통이자', category: '마통이자', memo: '마이너스통장 이자', day: '10', amount: 189620, subItems: [] },
-  { type: 'expense', title: '생활안정대출', category: '생활안정대출', memo: '생활안정자금 상환', day: '10', amount: 117035, subItems: [] },
-  { type: 'expense', title: '카니발할부', category: '카니발할부', memo: '카니발 차량 할부(7.9%)', day: '15', amount: 407096, subItems: [] },
-  { type: 'expense', title: '국민카드생활비', category: '국민카드생활비', memo: '국민카드 생활비', day: '15', amount: 1113588, subItems: [] },
-  { type: 'expense', title: '롯데카드', category: '롯데카드', memo: '롯데카드 결제', day: '14', amount: 472590, subItems: [] },
+  { type: 'expense', title: '주담대', category: '주택담보대출', memo: '신한 주택담보대출 이자/원금', day: '25', amount: 1543361, subItems: [] },
+  { type: 'expense', title: '마통이자', category: '대출이자납부', memo: '마이너스통장 이자', day: '10', amount: 189620, subItems: [] },
+  { type: 'expense', title: '생활안정대출', category: '대출이자납부', memo: '생활안정자금 상환', day: '10', amount: 117035, subItems: [] },
+  { type: 'expense', title: '카니발할부', category: '할부금', memo: '카니발 차량 할부(7.9%)', day: '15', amount: 407096, subItems: [] },
+  { type: 'expense', title: '국민카드생활비', category: '신용카드납부', memo: '국민카드 생활비', day: '15', amount: 1113588, subItems: [] },
+  { type: 'expense', title: '롯데카드', category: '신용카드납부', memo: '롯데카드 결제', day: '14', amount: 472590, subItems: [] },
   { 
     type: 'expense', 
     title: '보험료',
@@ -676,7 +688,7 @@ const defaultFixedItems = [
       { name: '자동차 보험', amount: 50000, checked: false }
     ] 
   },
-  { type: 'expense', title: '공과금/통신', category: '공과금/통신', memo: '도시가스 및 통신비/관리비', day: '21', amount: 350000, subItems: [] }
+  { type: 'expense', title: '공과금/통신', category: '공과금', memo: '도시가스 및 통신비/관리비', day: '21', amount: 350000, subItems: [] }
 ];
 
 let fixedItems = defaultFixedItems.map(item => ({ 
@@ -869,8 +881,8 @@ async function saveFixedItemsToDB(){
     for(let item of fixedItems){
       const payload = {
         type: item.type,
-        category: item.category, // 선택한 분류 카테고리 (통계용)
-        memo: `${item.title}:::${item.memo || ''}`, // 제목과 부가설명을 안전하게 저장
+        category: item.category,
+        memo: `${item.title}:::${item.memo || ''}`,
         day: item.day,
         amount: item.amount,
         sub_items: JSON.stringify(item.subItems || [])
@@ -898,14 +910,12 @@ function renderFixedItems(){
     const fullDate = getFormattedDate(currentYearMonth, item.day);
     const hasSubs = item.subItems && item.subItems.length > 0;
     
-    // 수입/지출 구분에 따른 고정 분류 카테고리 드롭다운 옵션 생성
     const categories = item.type === 'income' ? incomeCategories : expenseCategories;
     const catOptions = categories.map(c => `<option value="${c}" ${c === item.category ? 'selected' : ''}>${c}</option>`).join('');
 
     html += `
     <div class="card" style="background:#ffffff; border:1px solid #e5e7eb; margin-bottom:12px; padding:12px;">
       
-      <!-- 첫 번째 줄: 체크박스, 구분 배지, 항목 제목, 삭제 버튼 -->
       <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
         <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleMainCheck(${index}, this.checked)" style="width: 20px; height: 20px; cursor: pointer;">
         <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${item.type === 'income' ? '#d1fae5' : '#fee2e2'}; color: ${item.type === 'income' ? '#065f46' : '#991b1b'}; font-weight: bold;">
@@ -915,7 +925,6 @@ function renderFixedItems(){
         <button class="small danger" onclick="deleteFixedItem(${index})" style="padding:4px 8px; font-size:11px;">삭제</button>
       </div>
 
-      <!-- 두 번째 줄: 분류 카테고리 선택 드롭다운 & 부가설명 입력 -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
         <div>
           <label style="margin:0 0 2px 0; font-size:10px;">분류 카테고리 (통계용)</label>
@@ -929,7 +938,6 @@ function renderFixedItems(){
         </div>
       </div>
 
-      <!-- 세 번째 줄: 예정일자 및 금액 -->
       <div style="display: flex; gap: 8px;">
         <div style="flex: 1;">
           <label style="margin:0 0 2px 0; font-size:10px;">예정일자</label>
@@ -1314,9 +1322,41 @@ async function loadTx(){
     </div>`;
   });
 
-  // 📊 카테고리별 통계표 렌더링
+  // 📊 카테고리별 통계표 및 동그란 시간표(원형 도넛 차트) 렌더링
   const sortedCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
   let statsHtml = '';
+
+  const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#6366f1'];
+  let gradientStops = [];
+  let currentAngle = 0;
+  let legendHtml = '';
+
+  sortedCats.forEach(([cat, amt], idx) => {
+    const pct = totalExp > 0 ? (amt / totalExp) * 100 : 0;
+    const color = colors[idx % colors.length];
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + pct * 3.6;
+    gradientStops.push(`${color} ${startAngle}deg ${endAngle}deg`);
+    currentAngle = endAngle;
+
+    legendHtml += `<div style="display:flex; align-items:center; gap:4px; font-size:11px;"><span style="width:10px; height:10px; background:${color}; border-radius:3px; display:inline-block;"></span><span><b>${cat}</b> (${pct.toFixed(1)}%)</span></div>`;
+  });
+
+  const chartEl = $('donutChart');
+  if(chartEl){
+    if(totalExp > 0 && gradientStops.length > 0){
+      chartEl.style.background = `conic-gradient(${gradientStops.join(', ')})`;
+    } else {
+      chartEl.style.background = '#e5e7eb';
+    }
+  }
+  if($('donutTotalAmount')){
+    $('donutTotalAmount').textContent = won(totalExp);
+  }
+  if($('donutLegend')){
+    $('donutLegend').innerHTML = legendHtml || '<span class="muted" style="font-size:11px;">지출 내역이 없습니다.</span>';
+  }
+
   if(sortedCats.length === 0){
     statsHtml = '<div class="empty">이번 달 지출 내역이 없습니다.</div>';
   } else {
@@ -1476,7 +1516,7 @@ function updateRealtimeDecisionLogic(currentBalance){
     const percent = Math.min(100, Math.round((extraFund / debtTarget) * 100));
     $('dashGoalProgress').textContent = `${won(extraFund)} / ${won(debtTarget)} (${percent}% 달성)`;
   } else {
-    $('dashGoalProgress').textContent = `${won(extraFund)} (목표금액 미설정)`;
+    $('dashGoalProgress').textContent = `${won(debtTarget ? extraFund : 0)} (목표금액 미설정)`;
   }
 }
 
