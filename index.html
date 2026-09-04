@@ -196,7 +196,7 @@ th,td{
 <div id="app">
 
 <div class="notice">
-1순위: 부채 줄이기　→　2순위: 비상금　→　3순위: 저축
+1순위: 부채 줄이기 (고금리 우선)　→　2순위: 비상금　→　3순위: 저축
 </div>
 
 <div class="tabs">
@@ -221,6 +221,24 @@ th,td{
   </div>
 </div>
 
+<!-- 🚨 부채 탈출 실시간 판단 대시보드 카드 (NEW) -->
+<div class="card" style="background:#fef2f2; border:1px solid #fecaca;">
+  <h2 style="color:#b91c1c; margin-bottom:8px;">🚨 부채 탈출 실시간 판단 로직</h2>
+  <p class="muted" style="margin-bottom:10px;">금리 높은 순서로 최우선 타겟을 공략합니다.</p>
+  <div class="row" style="background:white; padding:8px 12px; border-radius:8px; margin-bottom:6px; border:0;">
+    <span style="font-size:12px;">🎯 1순위 집중 공략 타겟</span>
+    <b id="dashTargetDebt" class="red" style="font-size:13px;">분석 중...</b>
+  </div>
+  <div class="row" style="background:white; padding:8px 12px; border-radius:8px; margin-bottom:6px; border:0;">
+    <span style="font-size:12px;">💰 이번 달 추가상환 가능 가용재원</span>
+    <b id="dashExtraRepaymentFund" class="blue" style="font-size:14px;">0원</b>
+  </div>
+  <div class="row" style="background:white; padding:8px 12px; border-radius:8px; border:0;">
+    <span style="font-size:12px;">📊 부채 추가상환 목표 달성률</span>
+    <b id="dashGoalProgress" style="font-size:13px;">0%</b>
+  </div>
+</div>
+
 <div class="grid">
 <div class="card">
 <div class="muted">이번 달 수입</div>
@@ -235,7 +253,7 @@ th,td{
 <div id="dashBalance" class="big blue">0원</div>
 </div>
 <div class="card">
-<div class="muted">부채 잔액</div>
+<div class="muted">부채 잔액 총합</div>
 <div id="dashDebt" class="big">0원</div>
 </div>
 </div>
@@ -359,7 +377,7 @@ th,td{
 </div>
 
 <div class="card">
-<h2>현재 부채</h2>
+<h2>현재 부채 (금리 높은 순 정렬)</h2>
 <div id="debtList"></div>
 </div>
 
@@ -370,7 +388,7 @@ th,td{
 
 <div class="card">
 <h2>우리 가족 목표</h2>
-<div class="row"><span>🔴 1순위</span><b>부채 줄이기</b></div>
+<div class="row"><span>🔴 1순위</span><b>부채 줄이기 (고금리 우선)</b></div>
 <div class="row"><span>🟡 2순위</span><b>비상금 모으기</b></div>
 <div class="row"><span>🟢 3순위</span><b>저축하기</b></div>
 
@@ -386,7 +404,7 @@ th,td{
 
 <div class="card">
 <h2>상여금 약 800만원 사용 원칙</h2>
-<p class="muted">상여금은 생활비로 흡수하지 않고 부채 추가상환과 비상금 확보를 우선합니다.</p>
+<p class="muted">상여금은 생활비로 흡수하지 않고 부채 추가상환과 비상금 확보를 우선합니다[span_2](start_span)[span_2](end_span).</p>
 </div>
 
 </section>
@@ -468,7 +486,6 @@ function changeMonth(ym){
   loadAll();
 }
 
-// 새로운 고정 항목 입력창 토글 함수
 function toggleNewFixedForm() {
   const container = $('newFixedFormContainer');
   const btn = $('toggleNewFixedBtn');
@@ -483,7 +500,6 @@ function toggleNewFixedForm() {
   }
 }
 
-// Supabase에서 고정 내역 불러오기
 async function loadFixedItems(){
   try {
     const { data, error } = await supabaseClient.from('fixed_items').select('*').order('id', { ascending: true });
@@ -515,7 +531,6 @@ async function loadFixedItems(){
   renderFixedItems();
 }
 
-// 수정된 고정 내역을 Supabase에 영구 저장하기 (안전한 upsert 방식 적용)
 async function saveFixedItemsToDB(){
   if(!confirm('현재 수정된 고정 수입·지출 내역과 세부항목을 영구 저장하시겠습니까?')) return;
 
@@ -670,7 +685,6 @@ function updateFixedItem(index, field, value){
   fixedItems[index][field] = value;
 }
 
-// 모바일 브라우저 환경에서 날짜 형식 파싱 보완
 function updateFixedItemDate(index, value){
   if(!value) return;
   let dayStr = '';
@@ -713,9 +727,7 @@ function addNewFixedItem(){
   $('newFixedDay').value = '';
   $('newFixedAmount').value = '';
 
-  // 추가 완료 후 입력창 자동으로 닫기
   toggleNewFixedForm();
-
   renderFixedItems();
   alert('고정 항목이 추가되었습니다. 하단의 [수정된 고정 내역 저장]을 눌러야 영구 저장됩니다.');
 }
@@ -840,6 +852,9 @@ async function loadAll(){
   await Promise.all([loadTx(), loadDebt(), loadGoals()]);
 }
 
+let cachedDebts = [];
+let cachedGoals = {};
+
 async function loadTx(){
   const startDate = currentYearMonth + '-01';
   const [y, m] = currentYearMonth.split('-');
@@ -883,11 +898,17 @@ async function loadTx(){
   $('txList').innerHTML = html || `<div class="empty">${y}년 ${Number(m)}월에 등록된 내역이 없습니다.</div>`;
   $('dashIncome').textContent = won(income);
   $('dashExpense').textContent = won(expense);
-  $('dashBalance').textContent = won(income - expense);
+  
+  const balance = income - expense;
+  $('dashBalance').textContent = won(balance);
+
+  // 실시간 부채 상환 판단 로직 실행
+  updateRealtimeDecisionLogic(balance);
 }
 
 async function loadDebt(){
-  const {data, error} = await supabaseClient.from('debts').select('*').order('created_at',{ascending:true});
+  // 금리가 높은 순서대로 정렬해서 불러오기
+  const {data, error} = await supabaseClient.from('debts').select('*').order('rate', {ascending:false});
 
   if(error){
     console.error('debts:', error);
@@ -895,16 +916,17 @@ async function loadDebt(){
     return;
   }
 
+  cachedDebts = data || [];
   let total = 0;
   let html = '';
 
-  (data || []).forEach(x => {
+  cachedDebts.forEach(x => {
     total += Number(x.principal);
     html += `
     <div class="row debt">
       <div>
-        <b>${x.name}</b>
-        <div class="muted">금리 ${x.rate}% · 월 ${won(x.monthly_payment)}</div>
+        <b>${x.name}</b> <span style="font-size:11px; background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-weight:bold;">금리 ${x.rate}%</span>
+        <div class="muted">월 납입액 ${won(x.monthly_payment)}</div>
       </div>
       <div>
         <span class="amount">${won(x.principal)}</span>
@@ -916,6 +938,9 @@ async function loadDebt(){
 
   $('debtList').innerHTML = html || '<div class="empty">등록된 부채가 없습니다.</div>';
   $('dashDebt').textContent = won(total);
+
+  // 실시간 로직 갱신
+  updateRealtimeDecisionLogic();
 }
 
 async function saveGoals(){
@@ -933,11 +958,46 @@ async function loadGoals(){
   if(error) return;
 
   if(data){
+    cachedGoals = data;
     $('goalDebt').value = data.debt_target || '';
     $('goalEmergency').value = data.emergency_target || '';
     $('goalView').innerHTML = `
     <div class="row"><span>부채 추가상환 목표</span><b>${won(data.debt_target)}</b></div>
     <div class="row"><span>비상금 목표</span><b>${won(data.emergency_target)}</b></div>`;
+  } else {
+    cachedGoals = {};
+  }
+  updateRealtimeDecisionLogic();
+}
+
+// 💡 실시간 부채 탈출 판단 로직 계산 함수
+function updateRealtimeDecisionLogic(currentBalance){
+  if(currentBalance === undefined){
+    const incomeTxt = $('dashIncome').textContent.replace(/[^0-9]/g, '');
+    const expenseTxt = $('dashExpense').textContent.replace(/[^0-9]/g, '');
+    currentBalance = Number(incomeTxt) - Number(expenseTxt);
+  }
+
+  // 1. 1순위 집중 타겟 부채 결정 (금리가 가장 높은 부채)
+  let targetText = '등록된 부채 없음';
+  if(cachedDebts && cachedDebts.length > 0){
+    const topDebt = cachedDebts[0]; // 금리순 내림차순 정렬되어 있으므로 첫 번째가 최고금리
+    targetText = `${topDebt.name} (금리 ${topDebt.rate}%, 잔액 ${won(topDebt.principal)})`;
+  }
+  $('dashTargetDebt').textContent = targetText;
+
+  // 2. 추가상환 가능 가용재원 계산 (현재 잔액 - 비상금 목표액, 단 0 이하로는 안 떨어지게)
+  const emergencyTarget = Number(cachedGoals.emergency_target) || 0;
+  const extraFund = Math.max(0, currentBalance - emergencyTarget);
+  $('dashExtraRepaymentFund').textContent = won(extraFund);
+
+  // 3. 부채 추가상환 목표 대비 달성률 계산
+  const debtTarget = Number(cachedGoals.debt_target) || 0;
+  if(debtTarget > 0){
+    const percent = Math.min(100, Math.round((extraFund / debtTarget) * 100));
+    $('dashGoalProgress').textContent = `${won(extraFund)} / ${won(debtTarget)} (${percent}% 달성)`;
+  } else {
+    $('dashGoalProgress').textContent = `${won(extraFund)} (목표금액 미설정)`;
   }
 }
 
@@ -956,4 +1016,3 @@ window.addEventListener('load', async () => {
 
 </body>
 </html>
-
