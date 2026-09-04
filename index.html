@@ -307,12 +307,12 @@ th,td{
 
     <div style="display:flex; gap:8px; margin-top:15px;">
       <button class="primary" onclick="saveFixedItemsToDB()" style="background:#2563eb; flex:1; margin-top:0;">수정된 고정 내역 저장</button>
-      <button class="primary accent" onclick="applyCheckedFixedItems()" style="flex:1; margin-top:0;">체크한 내역 가계부 반영</button>
+      <button class="primary accent" onclick="applyCheckedFixedItems()" style="flex:1; margin-top:0;">체크한 내역 가계부 반영/동기화</button>
     </div>
   </div>
 </div>
 
-<!-- 이번 달 고정지출 기준 (기타 라벨 변경 반영) -->
+<!-- 이번 달 고정지출 기준 -->
 <div class="card">
 <h2>이번 달 고정지출 기준</h2>
 <div class="row"><span>부채 상환·이자</span><b>약 223만원</b></div>
@@ -382,7 +382,7 @@ th,td{
 <button class="primary" onclick="addDebt()">저장</button>
 </div>
 
-<!-- 현재 부채 목록 (수정 기능 포함) -->
+<!-- 현재 부채 목록 -->
 <div class="card">
 <h2>현재 부채 (금리 높은 순 정렬)</h2>
 <div id="debtList"></div>
@@ -676,10 +676,8 @@ function toggleSubCheck(itemIndex, subIndex, isChecked){
   renderFixedItems();
 }
 
-// 세부항목 개별 금액 수정 함수
 function updateSubItemAmount(itemIndex, subIndex, newAmount){
   fixedItems[itemIndex].subItems[subIndex].amount = newAmount;
-  // 체크된 항목들의 합산을 즉시 반영
   const checkedSubs = fixedItems[itemIndex].subItems.filter(s => s.checked);
   fixedItems[itemIndex].amount = checkedSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0);
   renderFixedItems();
@@ -771,32 +769,63 @@ async function deleteFixedItem(index){
   renderFixedItems();
 }
 
+// 🔄 체크 상태 동기화 및 가계부 반영/제외 로직
 async function applyCheckedFixedItems(){
-  const selected = fixedItems.filter(item => item.checked);
-  if(selected.length === 0){
-    alert('반영할 항목(또는 세부항목)을 체크해주세요.');
+  if(!confirm(`현재 체크된 고정 내역을 [${currentYearMonth.replace('-', '년 ')}월] 가계부에 동기화(반영/제외)하시겠습니까?`)) return;
+
+  const startDate = currentYearMonth + '-01';
+  const [y, m] = currentYearMonth.split('-');
+  const lastDay = new Date(y, m, 0).getDate();
+  const endDate = `${currentYearMonth}-${lastDay}`;
+
+  // 1. 현재 월의 기존 내역 불러오기
+  const { data: existingTx, error: fetchError } = await supabaseClient.from('transactions')
+    .select('*')
+    .gte('tx_date', startDate)
+    .lte('tx_date', endDate);
+
+  if(fetchError){
+    alert('기존 내역을 불러오는 중 오류가 발생했습니다: ' + fetchError.message);
     return;
   }
-  if(!confirm(`체크된 ${selected.length}개의 고정 내역을 [${currentYearMonth.replace('-', '년 ')}월] 가계부에 반영하시겠습니까?`)) return;
 
-  for(let item of selected){
+  // 2. 각 고정 항목별로 체크 상태에 따라 추가/수정 또는 삭제 처리
+  for(let index = 0; index < fixedItems.length; index++){
+    const item = fixedItems[index];
+    const fixedTag = `(고정ID:${index})`;
     const fullDate = getFormattedDate(currentYearMonth, item.day);
-    await supabaseClient.from('transactions').insert({
-      tx_date: fullDate,
-      type: item.type,
-      category: item.category,
-      memo: item.memo ? `${item.memo} (고정)` : '(고정)',
-      amount: item.amount
-    });
+    
+    // 이미 반영되어 있는 내역이 있는지 확인
+    const matchedTx = (existingTx || []).find(tx => tx.memo && tx.memo.includes(fixedTag));
+
+    if(item.checked){
+      // 체크되어 있다면: 없으면 새로 추가, 있으면 내용/금액 최신화
+      if(matchedTx){
+        await supabaseClient.from('transactions').update({
+          tx_date: fullDate,
+          amount: item.amount,
+          category: item.category,
+          memo: item.memo ? `${item.memo} ${fixedTag}` : fixedTag
+        }).eq('id', matchedTx.id);
+      } else {
+        await supabaseClient.from('transactions').insert({
+          tx_date: fullDate,
+          type: item.type,
+          category: item.category,
+          memo: item.memo ? `${item.memo} ${fixedTag}` : fixedTag,
+          amount: item.amount
+        });
+      }
+    } else {
+      // 체크가 해제되어 있다면: 기존에 반영되었던 내역을 삭제하여 계산에서 제외
+      if(matchedTx){
+        await supabaseClient.from('transactions').delete().eq('id', matchedTx.id);
+      }
+    }
   }
 
-  fixedItems.forEach(item => {
-    item.checked = false;
-    if(item.subItems) item.subItems.forEach(sub => sub.checked = false);
-  });
-
   await loadAll();
-  alert('선택한 고정 내역이 가계부에 성공적으로 반영되었습니다!');
+  alert('고정 내역 반영 및 변경 사항이 성공적으로 동기화되었습니다!');
 }
 
 function updatePresets(){
@@ -971,7 +1000,6 @@ async function loadDebt(){
   updateRealtimeDecisionLogic();
 }
 
-// 부채 수정 모드 활성화 함수
 function enableDebtEdit(id, name, principal, rate, payment){
   const row = $(`debt-row-${id}`);
   row.innerHTML = `
@@ -999,7 +1027,6 @@ function enableDebtEdit(id, name, principal, rate, payment){
   `;
 }
 
-// 부채 수정 내용 Supabase 저장 함수
 async function saveDebtEdit(id){
   const newPrincipal = Number($(`edit_principal_${id}`).value);
   const newRate = Number($(`edit_rate_${id}`).value);
