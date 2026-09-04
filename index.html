@@ -258,13 +258,13 @@ th,td{
 </div>
 </div>
 
-<!-- 🎁 [방법 2+3 조합] 상여금 및 수당 간편 스케줄러 카드 -->
+<!-- 🎁 연간 상여금·수당 간편 스케줄러 카드 (기본 접힘) -->
 <div class="card" style="background:#fdf4ff; border:1px solid #f5d0fe;">
-  <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
-    <h2 onclick="toggleBonusCardContent()" style="color:#86198f; margin:0; flex:1;">🎁 연간 상여금·수당 간편 스케줄러</h2>
-    <div style="display:flex; gap:6px; align-items:center;">
+  <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;" onclick="toggleBonusCardContent()">
+    <h2 style="color:#86198f; margin:0; flex:1;">🎁 연간 상여금·수당 간편 스케줄러</h2>
+    <div style="display:flex; gap:6px; align-items:center;" onclick="event.stopPropagation()">
       <button class="small" onclick="toggleBonusSettings()" style="background:#f0abfc; color:#581c87; font-size:11px; font-weight:bold; padding:4px 8px;">⚙️ 기준 설정</button>
-      <span id="bonusCardToggleText" onclick="toggleBonusCardContent()" style="font-size:12px; font-weight:bold; color:#86198f; background:#fae8ff; padding:4px 8px; border-radius:6px;">접기 ▲</span>
+      <span id="bonusCardToggleText" style="font-size:12px; font-weight:bold; color:#86198f; background:#fae8ff; padding:4px 8px; border-radius:6px;">펼치기 ▼</span>
     </div>
   </div>
 
@@ -302,7 +302,7 @@ th,td{
     <button class="primary small" onclick="saveBonusSettings()" style="background:#86198f; width:100%; margin-top:10px;">기준 설정 저장하기</button>
   </div>
 
-  <div id="bonusCardBody" style="margin-top:12px; display:block;">
+  <div id="bonusCardBody" style="margin-top:12px; display:none;">
     <p class="muted" style="margin-bottom:12px;">자동 계산된 금액을 확인 후 직접 수정(오버라이드)하거나 현재 조회 중인 월에 즉시 반영할 수 있습니다.</p>
     
     <div style="display:flex; flex-direction:column; gap:10px;">
@@ -351,14 +351,21 @@ th,td{
   </div>
 </div>
 
-<!-- 📅 고정 수입·지출 예정일 및 세부항목 관리 (오직 대출, 보험, 카드 등 일반 고정지출만 관리) -->
+<!-- 📅 고정 수입·지출 예정일 및 세부항목 관리 카드 (기본 접힘) -->
 <div class="card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
-  <div onclick="toggleFixedCardContent()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+  <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;" onclick="toggleFixedCardContent()">
     <h2 style="color:#047857; margin:0;">📅 일반 고정 수입·지출 관리 (대출/보험/카드 등)</h2>
-    <span id="fixedCardToggleText" style="font-size:12px; font-weight:bold; color:#047857; background:#d1fae5; padding:4px 8px; border-radius:6px;">접기 ▲</span>
+    <span id="fixedCardToggleText" style="font-size:12px; font-weight:bold; color:#047857; background:#d1fae5; padding:4px 8px; border-radius:6px;">펼치기 ▼</span>
   </div>
 
-  <div id="fixedCardBody" style="margin-top:12px; display:block;">
+  <div id="fixedCardBody" style="margin-top:12px; display:none;">
+    
+    <!-- 카테고리 관리 상단 버튼 -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:#d1fae5; padding:8px 12px; border-radius:8px;">
+      <span style="font-size:12px; font-weight:bold; color:#047857;">🏷️ 카테고리 관리 메뉴</span>
+      <button class="small" onclick="openCategoryManager()" style="background:#047857; color:white; font-size:11px; padding:5px 10px;">+ 카테고리 추가/관리</button>
+    </div>
+
     <p class="muted" style="margin-bottom:10px;">매달 반복되는 고정 지출 및 기본 급여 내역을 관리합니다.</p>
     <div id="fixedItemsList"></div>
 
@@ -370,7 +377,7 @@ th,td{
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
           <div>
             <label style="margin:0 0 2px 0; font-size:10px;">구분</label>
-            <select id="newFixedType" style="padding:6px; font-size:12px;">
+            <select id="newFixedType" onchange="updateNewFixedCategorySelect()" style="padding:6px; font-size:12px;">
               <option value="income">수입</option>
               <option value="expense">지출</option>
             </select>
@@ -382,8 +389,8 @@ th,td{
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
           <div>
-            <label style="margin:0 0 2px 0; font-size:10px;">항목명 (카테고리)</label>
-            <input type="text" id="newFixedCategory" placeholder="예: 주담대" style="padding:6px; font-size:12px;">
+            <label style="margin:0 0 2px 0; font-size:10px;">카테고리 선택</label>
+            <select id="newFixedCategory" style="padding:6px; font-size:12px;"></select>
           </div>
           <div>
             <label style="margin:0 0 2px 0; font-size:10px;">메모</label>
@@ -434,13 +441,16 @@ th,td{
 <input type="date" id="txDate">
 
 <label>구분</label>
-<select id="txType" onchange="updatePresets()">
+<select id="txType" onchange="updateTxCategorySelect(); updatePresets();">
 <option value="income">수입</option>
 <option value="expense">지출</option>
 </select>
 
-<label>카테고리</label>
-<input id="txCategory" placeholder="예: 급여, 생활비, 주유비, 담배값">
+<label>카테고리 선택</label>
+<select id="txCategorySelect" onchange="$('txCategory').value = this.value;" style="margin-bottom:6px;"></select>
+
+<label>카테고리 직접 입력 또는 수정</label>
+<input id="txCategory" placeholder="예: 급여, 생활비">
 <div class="presets" id="categoryPresets"></div>
 
 <label>내용</label>
@@ -534,6 +544,70 @@ function formatInputComma(input){
   input.value = Number(cleanVal).toLocaleString('ko-KR');
 }
 
+// 카테고리 목록 관리 (localStorage 기반)
+let incomeCategories = JSON.parse(localStorage.getItem('family_income_cats')) || ['급여', '주담대보탬', '정근수당', '명절휴가비', '성과상여금', '상여금', '기타수입'];
+let expenseCategories = JSON.parse(localStorage.getItem('family_expense_cats')) || ['주담대', '마통이자', '생활안정대출', '카니발할부', '주유비', '담배값', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '기타지출'];
+
+function saveCategories(){
+  localStorage.setItem('family_income_cats', JSON.stringify(incomeCategories));
+  localStorage.setItem('family_expense_cats', JSON.stringify(expenseCategories));
+  updateAllCategorySelects();
+}
+
+function openCategoryManager(){
+  const typeChoice = prompt('관리할 카테고리 종류를 입력하세요.\n1: 수입 카테고리\n2: 지출 카테고리', '2');
+  if(!typeChoice) return;
+  const isIncome = typeChoice === '1';
+  const list = isIncome ? incomeCategories : expenseCategories;
+  
+  const action = prompt(`[${isIncome ? '수입' : '지출'} 카테고리 목록]\n현재 항목: ${list.join(', ')}\n\n원하시는 작업을 선택하세요.\n1: 새 카테고리 추가\n2: 카테고리 삭제`, '1');
+  if(action === '1'){
+    const newCat = prompt('추가할 새로운 카테고리 이름을 입력하세요.');
+    if(newCat && newCat.trim()){
+      const trimmed = newCat.trim();
+      if(list.includes(trimmed)){ alert('이미 존재하는 카테고리입니다.'); return; }
+      list.push(trimmed);
+      saveCategories();
+      alert(`'${trimmed}' 카테고리가 추가되었습니다.`);
+    }
+  } else if(action === '2'){
+    const target = prompt(`삭제할 카테고리 이름을 정확히 입력하세요.\n(${list.join(', ')})`);
+    if(target && target.trim()){
+      const idx = list.indexOf(target.trim());
+      if(idx > -1){
+        list.splice(idx, 1);
+        saveCategories();
+        alert(`'${target.trim()}' 카테고리가 삭제되었습니다.`);
+      } else {
+        alert('해당 카테고리를 찾을 수 없습니다.');
+      }
+    }
+  }
+}
+
+function updateAllCategorySelects(){
+  updateNewFixedCategorySelect();
+  updateTxCategorySelect();
+  updatePresets();
+}
+
+function updateNewFixedCategorySelect(){
+  const type = $('newFixedType').value;
+  const list = type === 'income' ? incomeCategories : expenseCategories;
+  const select = $('newFixedCategory');
+  select.innerHTML = list.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function updateTxCategorySelect(){
+  const type = $('txType').value;
+  const list = type === 'income' ? incomeCategories : expenseCategories;
+  const select = $('txCategorySelect');
+  select.innerHTML = list.map(c => `<option value="${c}">${c}</option>`).join('');
+  if(list.length > 0){
+    $('txCategory').value = list[0];
+  }
+}
+
 // 상여금 설정값 관리 (localStorage 기반)
 let bonusSettings = JSON.parse(localStorage.getItem('family_bonus_settings')) || {
   baseSalary: 4110500,
@@ -549,9 +623,6 @@ let currentYearMonth = today.slice(0, 7);
 
 $('monthSelector').value = currentYearMonth;
 $('txDate').value = today;
-
-const incomePresets = ['급여', '주담대보탬', '정근수당', '명절휴가비', '성과상여금', '상여금', '기타수입'];
-const expensePresets = ['주담대', '마통이자', '생활안정대출', '카니발할부', '주유비', '담배값', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '기타지출'];
 
 const defaultFixedItems = [
   { type: 'income', category: '급여', memo: '기본급 및 수당', day: '25', amount: 4800000, subItems: [] },
@@ -592,14 +663,12 @@ function initBonusSchedulerUI(){
   $('settingPerfRate1').value = bonusSettings.perfRate1;
   $('settingPerfRate2').value = bonusSettings.perfRate2;
 
-  // 설명 텍스트 업데이트
   $('descJunggeun').textContent = `봉급(${formatNum(bonusSettings.baseSalary)}) × ${bonusSettings.junggeunRate}%`;
   $('descHoliday').textContent = `봉급(${formatNum(bonusSettings.baseSalary)}) × ${bonusSettings.holidayRate}%`;
 
   const selRate = Number($('perfSelect').value) === 130 ? bonusSettings.perfRate1 : bonusSettings.perfRate2;
   $('descPerf').textContent = `기준(${formatNum(bonusSettings.perfBase)}) × ${selRate}%`;
 
-  // 계산된 금액 입력란 설정
   const junggeunAmt = Math.round(bonusSettings.baseSalary * (bonusSettings.junggeunRate / 100));
   const holidayAmt = Math.round(bonusSettings.baseSalary * (bonusSettings.holidayRate / 100));
   const perfAmt = Math.round(bonusSettings.perfBase * (selRate / 100));
@@ -608,7 +677,6 @@ function initBonusSchedulerUI(){
   $('bonus_holiday').value = formatNum(holidayAmt);
   $('bonus_perf').value = formatNum(perfAmt);
 
-  // 셀렉트 박스 옵션 텍스트 업데이트
   const perfSelect = $('perfSelect');
   perfSelect.options[0].text = bonusSettings.perfRate1 + '%';
   perfSelect.options[0].value = bonusSettings.perfRate1;
@@ -926,12 +994,12 @@ function updateFixedItemDate(index, value){
 
 async function addNewFixedItem(){
   const type = $('newFixedType').value;
-  const category = $('newFixedCategory').value.trim();
+  const category = $('newFixedCategory').value;
   const memo = $('newFixedMemo').value.trim();
   const day = $('newFixedDay').value.trim();
   const amount = Number($('newFixedAmount').value) || 0;
 
-  if(!category){ alert('항목명(카테고리)을 입력하세요.'); return; }
+  if(!category){ alert('카테고리를 선택하세요.'); return; }
   if(!day || Number(day) < 1 || Number(day) > 31){ alert('올바른 일자(1~31)를 입력하세요.'); return; }
 
   const newItem = {
@@ -946,7 +1014,6 @@ async function addNewFixedItem(){
   const { error } = await supabaseClient.from('fixed_items').insert(newItem);
   if(error){ alert('추가 실패: ' + error.message); return; }
 
-  $('newFixedCategory').value = '';
   $('newFixedMemo').value = '';
   $('newFixedDay').value = '';
   $('newFixedAmount').value = '';
@@ -1023,13 +1090,9 @@ async function applyCheckedFixedItems(){
 
 function updatePresets(){
   const type = $('txType').value;
-  const list = type === 'income' ? incomePresets : expensePresets;
+  const list = type === 'income' ? incomeCategories : expenseCategories;
   const container = $('categoryPresets');
-  container.innerHTML = list.map(item => `<span class="chip" onclick="setCategory('${item}')">${item}</span>`).join('');
-}
-
-function setCategory(cat){
-  $('txCategory').value = cat;
+  container.innerHTML = list.map(item => `<span class="chip" onclick="$('txCategory').value='${item}'">${item}</span>`).join('');
 }
 
 function showTab(id, btn){
@@ -1317,7 +1380,7 @@ function updateRealtimeDecisionLogic(currentBalance){
 
 window.addEventListener('load', async () => {
   try{
-    updatePresets();
+    updateAllCategorySelects();
     initBonusSchedulerUI();
     await loadAll();
     console.log('초기화 완료');
@@ -1329,4 +1392,3 @@ window.addEventListener('load', async () => {
 
 </body>
 </html>
-
