@@ -221,7 +221,7 @@ th,td{
   </div>
 </div>
 
-<!-- 🚨 부채 탈출 실시간 판단 대시보드 카드 (NEW) -->
+<!-- 🚨 부채 탈출 실시간 판단 대시보드 카드 -->
 <div class="card" style="background:#fef2f2; border:1px solid #fecaca;">
   <h2 style="color:#b91c1c; margin-bottom:8px;">🚨 부채 탈출 실시간 판단 로직</h2>
   <p class="muted" style="margin-bottom:10px;">금리 높은 순서로 최우선 타겟을 공략합니다.</p>
@@ -258,53 +258,59 @@ th,td{
 </div>
 </div>
 
-<!-- 📅 고정 수입·지출 예정일 및 세부항목 관리 -->
+<!-- 📅 고정 수입·지출 예정일 및 세부항목 관리 (접기/펼치기 기능 추가) -->
 <div class="card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
-<h2 style="color:#047857;">📅 고정 수입·지출 예정일 관리</h2>
-<p class="muted" style="margin-bottom:10px;">금액/날짜 수정 후 '고정 내역 저장'을 누르면 영구 적용됩니다.</p>
-<div id="fixedItemsList"></div>
-
-<!-- 새로운 고정 항목 추가 영역 (버튼 토글형) -->
-<div style="margin-top:20px; padding-top:15px; border-top:2px dashed #bbf7d0;">
-  <button class="primary small" id="toggleNewFixedBtn" onclick="toggleNewFixedForm()" style="background:#047857; width:100%; font-size:13px; padding:10px;">➕ 새로운 고정 수입/지출 항목 추가</button>
-  
-  <div id="newFixedFormContainer" style="display:none; margin-top:12px; background:#ffffff; padding:12px; border-radius:10px; border:1px solid #bbf7d0;">
-    <b style="font-size:13px; color:#047857; display:block; margin-bottom:8px;">새 고정 항목 세부 정보 입력</b>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-      <div>
-        <label style="margin:0 0 2px 0; font-size:10px;">구분</label>
-        <select id="newFixedType" style="padding:6px; font-size:12px;">
-          <option value="expense">지출</option>
-          <option value="income">수입</option>
-        </select>
-      </div>
-      <div>
-        <label style="margin:0 0 2px 0; font-size:10px;">일자 (일)</label>
-        <input type="number" id="newFixedDay" placeholder="예: 25" min="1" max="31" style="padding:6px; font-size:12px;">
-      </div>
-    </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
-      <div>
-        <label style="margin:0 0 2px 0; font-size:10px;">항목명 (카테고리)</label>
-        <input type="text" id="newFixedCategory" placeholder="예: 보험료" style="padding:6px; font-size:12px;">
-      </div>
-      <div>
-        <label style="margin:0 0 2px 0; font-size:10px;">메모</label>
-        <input type="text" id="newFixedMemo" placeholder="예: 가족 보험" style="padding:6px; font-size:12px;">
-      </div>
-    </div>
-    <div style="margin-top:8px;">
-      <label style="margin:0 0 2px 0; font-size:10px;">금액 (세부항목이 없을 경우 입력)</label>
-      <input type="number" id="newFixedAmount" placeholder="원" style="padding:6px; font-size:12px;">
-    </div>
-    <button class="primary small" onclick="addNewFixedItem()" style="background:#047857; width:100%; margin-top:10px;">고정 항목 추가하기</button>
+  <div onclick="toggleFixedCardContent()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+    <h2 style="color:#047857; margin:0;">📅 고정 수입·지출 예정일 관리</h2>
+    <span id="fixedCardToggleText" style="font-size:12px; font-weight:bold; color:#047857; background:#d1fae5; padding:4px 8px; border-radius:6px;">접기 ▲</span>
   </div>
-</div>
 
-<div style="display:flex; gap:8px; margin-top:15px;">
-  <button class="primary" onclick="saveFixedItemsToDB()" style="background:#2563eb; flex:1; margin-top:0;">수정된 고정 내역 저장</button>
-  <button class="primary accent" onclick="applyCheckedFixedItems()" style="flex:1; margin-top:0;">체크한 내역 가계부 반영</button>
-</div>
+  <div id="fixedCardBody" style="margin-top:12px; display:block;">
+    <p class="muted" style="margin-bottom:10px;">금액/날짜 수정 후 '고정 내역 저장'을 누르면 영구 적용됩니다.</p>
+    <div id="fixedItemsList"></div>
+
+    <!-- 새로운 고정 항목 추가 영역 (버튼 토글형) -->
+    <div style="margin-top:20px; padding-top:15px; border-top:2px dashed #bbf7d0;">
+      <button class="primary small" id="toggleNewFixedBtn" onclick="toggleNewFixedForm()" style="background:#047857; width:100%; font-size:13px; padding:10px;">➕ 새로운 고정 수입/지출 항목 추가</button>
+      
+      <div id="newFixedFormContainer" style="display:none; margin-top:12px; background:#ffffff; padding:12px; border-radius:10px; border:1px solid #bbf7d0;">
+        <b style="font-size:13px; color:#047857; display:block; margin-bottom:8px;">새 고정 항목 세부 정보 입력</b>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div>
+            <label style="margin:0 0 2px 0; font-size:10px;">구분</label>
+            <select id="newFixedType" style="padding:6px; font-size:12px;">
+              <option value="expense">지출</option>
+              <option value="income">수입</option>
+            </select>
+          </div>
+          <div>
+            <label style="margin:0 0 2px 0; font-size:10px;">일자 (일)</label>
+            <input type="number" id="newFixedDay" placeholder="예: 25" min="1" max="31" style="padding:6px; font-size:12px;">
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+          <div>
+            <label style="margin:0 0 2px 0; font-size:10px;">항목명 (카테고리)</label>
+            <input type="text" id="newFixedCategory" placeholder="예: 보험료" style="padding:6px; font-size:12px;">
+          </div>
+          <div>
+            <label style="margin:0 0 2px 0; font-size:10px;">메모</label>
+            <input type="text" id="newFixedMemo" placeholder="예: 가족 보험" style="padding:6px; font-size:12px;">
+          </div>
+        </div>
+        <div style="margin-top:8px;">
+          <label style="margin:0 0 2px 0; font-size:10px;">금액 (세부항목이 없을 경우 입력)</label>
+          <input type="number" id="newFixedAmount" placeholder="원" style="padding:6px; font-size:12px;">
+        </div>
+        <button class="primary small" onclick="addNewFixedItem()" style="background:#047857; width:100%; margin-top:10px;">고정 항목 추가하기</button>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:15px;">
+      <button class="primary" onclick="saveFixedItemsToDB()" style="background:#2563eb; flex:1; margin-top:0;">수정된 고정 내역 저장</button>
+      <button class="primary accent" onclick="applyCheckedFixedItems()" style="flex:1; margin-top:0;">체크한 내역 가계부 반영</button>
+    </div>
+  </div>
 </div>
 
 <div class="card">
@@ -341,11 +347,11 @@ th,td{
 </select>
 
 <label>카테고리</label>
-<input id="txCategory" placeholder="예: 급여, 생활비, 보험, 공과금">
+<input id="txCategory" placeholder="예: 급여, 생활비, 주유비, 담배값">
 <div class="presets" id="categoryPresets"></div>
 
 <label>내용</label>
-<input id="txMemo" placeholder="예: 국민카드 생활비">
+<input id="txMemo" placeholder="예: 주유소 결제">
 
 <label>금액</label>
 <input type="number" id="txAmount" placeholder="원">
@@ -404,7 +410,7 @@ th,td{
 
 <div class="card">
 <h2>상여금 약 800만원 사용 원칙</h2>
-<p class="muted">상여금은 생활비로 흡수하지 않고 부채 추가상환과 비상금 확보를 우선합니다[span_2](start_span)[span_2](end_span).</p>
+<p class="muted">상여금은 생활비로 흡수하지 않고 부채 추가상환과 비상금 확보를 우선합니다.</p>
 </div>
 
 </section>
@@ -434,7 +440,7 @@ $('monthSelector').value = currentYearMonth;
 $('txDate').value = today;
 
 const incomePresets = ['급여', '와이프보탬', '상여금', '기타수입'];
-const expensePresets = ['주담대', '마통이자', '생활안정대출', '카니발할부', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '담배값', '주유비', '기타지출'];
+const expensePresets = ['주담대', '마통이자', '생활안정대출', '카니발할부', '주유비', '담배값', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '기타지출'];
 
 // 기본 고정 내역 템플릿
 const defaultFixedItems = [
@@ -466,6 +472,19 @@ let fixedItems = defaultFixedItems.map(item => ({
   checked: false, 
   showSubManager: item.subItems && item.subItems.length > 0 
 }));
+
+// 고정 수입·지출 카드 접기/펼치기 함수
+function toggleFixedCardContent() {
+  const body = $('fixedCardBody');
+  const text = $('fixedCardToggleText');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    text.textContent = '접기 ▲';
+  } else {
+    body.style.display = 'none';
+    text.textContent = '펼치기 ▼';
+  }
+}
 
 function getFormattedDate(ym, day){
   const paddedDay = String(day).padStart(2, '0');
@@ -902,12 +921,10 @@ async function loadTx(){
   const balance = income - expense;
   $('dashBalance').textContent = won(balance);
 
-  // 실시간 부채 상환 판단 로직 실행
   updateRealtimeDecisionLogic(balance);
 }
 
 async function loadDebt(){
-  // 금리가 높은 순서대로 정렬해서 불러오기
   const {data, error} = await supabaseClient.from('debts').select('*').order('rate', {ascending:false});
 
   if(error){
@@ -939,7 +956,6 @@ async function loadDebt(){
   $('debtList').innerHTML = html || '<div class="empty">등록된 부채가 없습니다.</div>';
   $('dashDebt').textContent = won(total);
 
-  // 실시간 로직 갱신
   updateRealtimeDecisionLogic();
 }
 
@@ -970,7 +986,6 @@ async function loadGoals(){
   updateRealtimeDecisionLogic();
 }
 
-// 💡 실시간 부채 탈출 판단 로직 계산 함수
 function updateRealtimeDecisionLogic(currentBalance){
   if(currentBalance === undefined){
     const incomeTxt = $('dashIncome').textContent.replace(/[^0-9]/g, '');
@@ -978,20 +993,17 @@ function updateRealtimeDecisionLogic(currentBalance){
     currentBalance = Number(incomeTxt) - Number(expenseTxt);
   }
 
-  // 1. 1순위 집중 타겟 부채 결정 (금리가 가장 높은 부채)
   let targetText = '등록된 부채 없음';
   if(cachedDebts && cachedDebts.length > 0){
-    const topDebt = cachedDebts[0]; // 금리순 내림차순 정렬되어 있으므로 첫 번째가 최고금리
+    const topDebt = cachedDebts[0];
     targetText = `${topDebt.name} (금리 ${topDebt.rate}%, 잔액 ${won(topDebt.principal)})`;
   }
   $('dashTargetDebt').textContent = targetText;
 
-  // 2. 추가상환 가능 가용재원 계산 (현재 잔액 - 비상금 목표액, 단 0 이하로는 안 떨어지게)
   const emergencyTarget = Number(cachedGoals.emergency_target) || 0;
   const extraFund = Math.max(0, currentBalance - emergencyTarget);
   $('dashExtraRepaymentFund').textContent = won(extraFund);
 
-  // 3. 부채 추가상환 목표 대비 달성률 계산
   const debtTarget = Number(cachedGoals.debt_target) || 0;
   if(debtTarget > 0){
     const percent = Math.min(100, Math.round((extraFund / debtTarget) * 100));
@@ -1016,3 +1028,4 @@ window.addEventListener('load', async () => {
 
 </body>
 </html>
+
