@@ -589,6 +589,7 @@ function updateAllCategorySelects(){
   updateNewFixedCategorySelect();
   updateTxCategorySelect();
   updatePresets();
+  renderFixedItems();
 }
 
 function updateNewFixedCategorySelect(){
@@ -823,7 +824,7 @@ async function loadFixedItems(){
 }
 
 async function saveFixedItemsToDB(){
-  if(!confirm('현재 수정된 일반 고정 수입·지출 내역과 금액을 영구 저장하시겠습니까?')) return;
+  if(!confirm('현재 수정된 일반 고정 수입·지출 내역과 카테고리를 영구 저장하시겠습니까?')) return;
 
   try {
     for(let item of fixedItems){
@@ -857,6 +858,10 @@ function renderFixedItems(){
   fixedItems.forEach((item, index) => {
     const fullDate = getFormattedDate(currentYearMonth, item.day);
     const hasSubs = item.subItems && item.subItems.length > 0;
+    
+    // 수입/지출 구분에 따른 카테고리 드롭다운 옵션 생성
+    const categories = item.type === 'income' ? incomeCategories : expenseCategories;
+    const catOptions = categories.map(c => `<option value="${c}" ${c === item.category ? 'selected' : ''}>${c}</option>`).join('');
 
     html += `
     <div class="card" style="background:#ffffff; border:1px solid #e5e7eb; margin-bottom:12px; padding:12px;">
@@ -865,7 +870,9 @@ function renderFixedItems(){
         <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${item.type === 'income' ? '#d1fae5' : '#fee2e2'}; color: ${item.type === 'income' ? '#065f46' : '#991b1b'}; font-weight: bold;">
           ${item.type === 'income' ? '수입' : '지출'}
         </span>
-        <b style="font-size: 14px;">${item.category}</b>
+        <select onchange="updateFixedItemCategory(${index}, this.value)" style="padding: 6px; font-size: 13px; font-weight: bold; width: auto; flex: 1; min-width: 130px;">
+          ${catOptions}
+        </select>
         <span class="muted" style="font-size: 11px; margin-left: auto;">${item.memo || ''}</span>
         <button class="small danger" onclick="deleteFixedItem(${index})" style="padding:4px 8px; font-size:11px;">삭제</button>
       </div>
@@ -922,6 +929,10 @@ function renderFixedItems(){
   });
 
   $('fixedItemsList').innerHTML = html;
+}
+
+function updateFixedItemCategory(index, category){
+  fixedItems[index].category = category;
 }
 
 function toggleSubManager(index){
@@ -1194,6 +1205,7 @@ async function loadTx(){
     if(matchedTx){
       item.checked = true;
       item.amount = Number(matchedTx.amount);
+      item.category = matchedTx.category; // 동기화 시 저장된 카테고리 반영
       if(item.subItems && item.subItems.length > 0){
         item.subItems.forEach(sub => sub.checked = true);
       }
@@ -1392,3 +1404,4 @@ window.addEventListener('load', async () => {
 
 </body>
 </html>
+
