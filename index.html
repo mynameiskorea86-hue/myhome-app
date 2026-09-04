@@ -550,30 +550,56 @@ function formatInputComma(input){
   input.value = Number(cleanVal).toLocaleString('ko-KR');
 }
 
-// 카테고리 목록 관리 (localStorage 기반)
+// 1. 수입·지출 직접 입력용 카테고리 (깔끔한 일반 가계부 분류)
+let txIncomeCategories = JSON.parse(localStorage.getItem('family_tx_income_cats')) || ['급여', '부수입', '상여/수당', '기타수입'];
+let txExpenseCategories = JSON.parse(localStorage.getItem('family_tx_expense_cats')) || ['생활비', '식비', '교통/주유', '대출상환', '보험료', '공과금/통신', '쇼핑/문화', '기타지출'];
+
+// 2. 고정 항목 분류용 카테고리 (항목별 구분/통계용)
 let incomeCategories = JSON.parse(localStorage.getItem('family_income_cats')) || ['급여', '주담대보탬', '정근수당', '명절휴가비', '성과상여금', '상여금', '기타수입'];
 let expenseCategories = JSON.parse(localStorage.getItem('family_expense_cats')) || ['주담대', '마통이자', '생활안정대출', '카니발할부', '주유비', '담배값', '국민카드생활비', '롯데카드', '보험료', '공과금/통신', '기타지출'];
 
-function saveCategories(){
+function saveTxCategories(){
+  localStorage.setItem('family_tx_income_cats', JSON.stringify(txIncomeCategories));
+  localStorage.setItem('family_tx_expense_cats', JSON.stringify(txExpenseCategories));
+  updateTxCategorySelect();
+  updatePresets();
+}
+
+function saveFixedCategories(){
   localStorage.setItem('family_income_cats', JSON.stringify(incomeCategories));
   localStorage.setItem('family_expense_cats', JSON.stringify(expenseCategories));
-  updateAllCategorySelects();
+  updateNewFixedCategorySelect();
+  renderFixedItems();
 }
 
 function openCategoryManager(){
-  const typeChoice = prompt('관리할 카테고리 종류를 입력하세요.\n1: 수입 카테고리\n2: 지출 카테고리', '2');
+  const typeChoice = prompt('관리할 카테고리 종류를 선택하세요.\n1: 수입·지출 직접 입력용 카테고리\n2: 고정 항목 분류용 카테고리', '1');
   if(!typeChoice) return;
-  const isIncome = typeChoice === '1';
-  const list = isIncome ? incomeCategories : expenseCategories;
+  const isTx = typeChoice === '1';
+
+  const subChoice = prompt('어떤 카테고리를 관리하시겠습니까?\n1: 수입 카테고리\n2: 지출 카테고리', '2');
+  if(!subChoice) return;
+  const isIncome = subChoice === '1';
+
+  let list, saveFunc, titleName;
+  if(isTx){
+    list = isIncome ? txIncomeCategories : txExpenseCategories;
+    saveFunc = saveTxCategories;
+    titleName = isIncome ? '수입·지출 입력용 [수입]' : '수입·지출 입력용 [지출]';
+  } else {
+    list = isIncome ? incomeCategories : expenseCategories;
+    saveFunc = saveFixedCategories;
+    titleName = isIncome ? '고정 항목 분류용 [수입]' : '고정 항목 분류용 [지출]';
+  }
   
-  const action = prompt(`[${isIncome ? '수입' : '지출'} 카테고리 목록]\n현재 항목: ${list.join(', ')}\n\n원하시는 작업을 선택하세요.\n1: 새 카테고리 추가\n2: 카테고리 삭제`, '1');
+  const action = prompt(`[${titleName} 목록]\n현재 항목: ${list.join(', ')}\n\n원하시는 작업을 선택하세요.\n1: 새 카테고리 추가\n2: 카테고리 삭제`, '1');
   if(action === '1'){
     const newCat = prompt('추가할 새로운 카테고리 이름을 입력하세요.');
     if(newCat && newCat.trim()){
       const trimmed = newCat.trim();
       if(list.includes(trimmed)){ alert('이미 존재하는 카테고리입니다.'); return; }
       list.push(trimmed);
-      saveCategories();
+      saveFunc();
       alert(`'${trimmed}' 카테고리가 추가되었습니다.`);
     }
   } else if(action === '2'){
@@ -582,7 +608,7 @@ function openCategoryManager(){
       const idx = list.indexOf(target.trim());
       if(idx > -1){
         list.splice(idx, 1);
-        saveCategories();
+        saveFunc();
         alert(`'${target.trim()}' 카테고리가 삭제되었습니다.`);
       } else {
         alert('해당 카테고리를 찾을 수 없습니다.');
@@ -607,7 +633,7 @@ function updateNewFixedCategorySelect(){
 
 function updateTxCategorySelect(){
   const type = $('txType').value;
-  const list = type === 'income' ? incomeCategories : expenseCategories;
+  const list = type === 'income' ? txIncomeCategories : txExpenseCategories;
   const select = $('txCategorySelect');
   select.innerHTML = list.map(c => `<option value="${c}">${c}</option>`).join('');
   if(list.length > 0){
@@ -876,7 +902,7 @@ function renderFixedItems(){
     const fullDate = getFormattedDate(currentYearMonth, item.day);
     const hasSubs = item.subItems && item.subItems.length > 0;
     
-    // 수입/지출 구분에 따른 카테고리 드롭다운 옵션 생성
+    // 수입/지출 구분에 따른 고정 분류 카테고리 드롭다운 옵션 생성
     const categories = item.type === 'income' ? incomeCategories : expenseCategories;
     const catOptions = categories.map(c => `<option value="${c}" ${c === item.category ? 'selected' : ''}>${c}</option>`).join('');
 
@@ -1144,7 +1170,7 @@ async function applyCheckedFixedItems(){
 
 function updatePresets(){
   const type = $('txType').value;
-  const list = type === 'income' ? incomeCategories : expenseCategories;
+  const list = type === 'income' ? txIncomeCategories : txExpenseCategories;
   const container = $('categoryPresets');
   container.innerHTML = list.map(item => `<span class="chip" onclick="$('txCategory').value='${item}'">${item}</span>`).join('');
 }
