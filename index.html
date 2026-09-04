@@ -221,7 +221,7 @@ th,td{
   </div>
 </div>
 
-<!-- 🚀 [신규 추가] 부채 탈출 스피드 & 잔액 감소 추적 카드 -->
+<!-- 🚀 부채 탈출 스피드 & 잔액 감소 추적 카드 -->
 <div class="card" style="background:#faf5ff; border:1px solid #e9d5ff;">
   <h2 style="color:#7e22ce; margin-bottom:8px;">🚀 부채 탈출 스피드 & 속도계</h2>
   <p class="muted" style="margin-bottom:12px;">전월 대비 총부채 감축 속도와 탈출 진행률을 실시간으로 보여줍니다.</p>
@@ -287,7 +287,7 @@ th,td{
 </div>
 </div>
 
-<!-- 🎁 연간 상여금·수당 간편 스케줄러 카드 (기본 접힘) -->
+<!-- 🎁 연간 상여금·수당 간편 스케줄러 카드 -->
 <div class="card" style="background:#fdf4ff; border:1px solid #f5d0fe;">
   <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;" onclick="toggleBonusCardContent()">
     <h2 style="color:#86198f; margin:0; flex:1;">🎁 연간 상여금·수당 간편 스케줄러</h2>
@@ -297,7 +297,6 @@ th,td{
     </div>
   </div>
 
-  <!-- ⚙️ 산정 기준 수정 패널 (기본 숨김) -->
   <div id="bonusSettingsPanel" style="display:none; margin-top:12px; background:white; padding:12px; border-radius:10px; border:1px solid #f0abfc;">
     <b style="font-size:13px; color:#86198f; display:block; margin-bottom:8px;">🛠️ 연도별 봉급 및 수당 산정 기준 수정·저장</b>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
@@ -335,52 +334,47 @@ th,td{
     <p class="muted" style="margin-bottom:12px;">자동 계산된 금액을 확인 후 직접 수정(오버라이드)하거나 현재 조회 중인 월에 즉시 반영할 수 있습니다.</p>
     
     <div style="display:flex; flex-direction:column; gap:10px;">
-      
-      <!-- 정근수당 -->
       <div style="background:white; padding:10px; border-radius:10px; border:1px solid #f5d0fe; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
         <div>
           <b style="font-size:13px; color:#86198f;">정근수당 (1월, 7월)</b>
-          <div id="descJunggeun" class="muted">봉급(4,110,500) × 50%</div>
+          <div id="descJunggeun" class="muted">봉급 × 50%</div>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <input type="text" id="bonus_junggeun" value="2,055,250" oninput="formatInputComma(this)" style="width:125px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
+          <input type="text" id="bonus_junggeun" oninput="formatInputComma(this)" style="width:125px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
           <button class="small" onclick="quickApplyBonus('정근수당', '정근수당 지급', $('bonus_junggeun').value)" style="background:#86198f; color:white; font-size:11px; padding:6px 10px;">현재 월 반영</button>
         </div>
       </div>
 
-      <!-- 명절휴가비 -->
       <div style="background:white; padding:10px; border-radius:10px; border:1px solid #f5d0fe; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
         <div>
           <b style="font-size:13px; color:#86198f;">명절휴가비 (설·추석 해당월)</b>
-          <div id="descHoliday" class="muted">봉급(4,110,500) × 60%</div>
+          <div id="descHoliday" class="muted">봉급 × 60%</div>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <input type="text" id="bonus_holiday" value="2,466,300" oninput="formatInputComma(this)" style="width:125px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
+          <input type="text" id="bonus_holiday" oninput="formatInputComma(this)" style="width:125px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
           <button class="small" onclick="quickApplyBonus('명절휴가비', '명절휴가비 지급', $('bonus_holiday').value)" style="background:#86198f; color:white; font-size:11px; padding:6px 10px;">현재 월 반영</button>
         </div>
       </div>
 
-      <!-- 성과상여금 -->
       <div style="background:white; padding:10px; border-radius:10px; border:1px solid #f5d0fe; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
         <div>
           <b style="font-size:13px; color:#86198f;">성과상여금 (3월)</b>
-          <div id="descPerf" class="muted">기준(3,444,700) × 130%</div>
+          <div id="descPerf" class="muted">기준 × 130%</div>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
           <select id="perfSelect" onchange="updatePerfAmount()" style="width:75px; padding:6px; font-size:11px;">
             <option value="130">130%</option>
             <option value="108">108%</option>
           </select>
-          <input type="text" id="bonus_perf" value="4,478,110" oninput="formatInputComma(this)" style="width:125px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
+          <input type="text" id="bonus_perf" oninput="formatInputComma(this)" style="width:125px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
           <button class="small" onclick="quickApplyBonus('성과상여금', '성과상여금 지급', $('bonus_perf').value)" style="background:#86198f; color:white; font-size:11px; padding:6px 10px;">현재 월 반영</button>
         </div>
       </div>
-
     </div>
   </div>
 </div>
 
-<!-- 📅 고정 수입·지출 예정일 및 세부항목 관리 카드 (기본 접힘) -->
+<!-- 📅 일반 고정 수입·지출 예정일 및 세부항목 관리 카드 -->
 <div class="card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
   <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;" onclick="toggleFixedCardContent()">
     <h2 style="color:#047857; margin:0;">📅 일반 고정 수입·지출 관리 (대출/보험/카드 등)</h2>
@@ -388,8 +382,6 @@ th,td{
   </div>
 
   <div id="fixedCardBody" style="margin-top:12px; display:none;">
-    
-    <!-- 카테고리 관리 상단 버튼 -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:#d1fae5; padding:8px 12px; border-radius:8px;">
       <span style="font-size:12px; font-weight:bold; color:#047857;">🏷️ 카테고리 관리 메뉴</span>
       <button class="small" onclick="openCategoryManager()" style="background:#047857; color:white; font-size:11px; padding:5px 10px;">+ 카테고리 추가/관리</button>
@@ -450,8 +442,6 @@ th,td{
 <!-- 📊 이번 달 지출 카테고리별 통계 -->
 <div class="card">
   <h2>📊 이번 달 지출 카테고리별 통계</h2>
-  
-  <!-- 둥근 시간표 형태의 원형 도넛 차트 및 범례 -->
   <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid #eee;">
     <div id="donutChart" style="width:160px; height:160px; border-radius:50%; background:#e5e7eb; position:relative; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
       <div style="position:absolute; inset:42px; background:white; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
@@ -461,7 +451,6 @@ th,td{
     </div>
     <div id="donutLegend" style="display:flex; flex-wrap:wrap; gap:6px 12px; justify-content:center; margin-top:12px;"></div>
   </div>
-
   <div id="categoryStatsContent"></div>
 </div>
 
@@ -476,32 +465,24 @@ th,td{
 
 
 <section id="tx" class="section">
-
 <div class="card">
 <h2>수입·지출 추가</h2>
-
 <label>날짜</label>
 <input type="date" id="txDate">
-
 <label>구분</label>
 <select id="txType" onchange="updateTxCategorySelect(); updatePresets();">
 <option value="income">수입</option>
 <option value="expense">지출</option>
 </select>
-
 <label>카테고리 선택</label>
 <select id="txCategorySelect" onchange="$('txCategory').value = this.value;" style="margin-bottom:6px;"></select>
-
 <label>카테고리 직접 입력 또는 수정</label>
 <input id="txCategory" placeholder="예: 급여, 생활비">
 <div class="presets" id="categoryPresets"></div>
-
 <label>내용</label>
 <input id="txMemo" placeholder="예: 주유소 결제">
-
 <label>금액</label>
 <input type="number" id="txAmount" placeholder="원">
-
 <button class="primary" onclick="addTx()">저장</button>
 </div>
 
@@ -509,12 +490,10 @@ th,td{
 <h2>선택한 월(<span id="txListMonthTitle">2026년 9월</span>) 내역</h2>
 <div id="txList"></div>
 </div>
-
 </section>
 
 
 <section id="debt" class="section">
-
 <div class="card">
 <h2>부채 추가</h2>
 <label>대출명</label>
@@ -533,12 +512,10 @@ th,td{
 <h2>현재 부채 (금리 높은 순 정렬)</h2>
 <div id="debtList"></div>
 </div>
-
 </section>
 
 
 <section id="goal" class="section">
-
 <div class="card">
 <h2>우리 가족 목표</h2>
 <div class="row"><span>🔴 1순위</span><b>부채 줄이기 (고금리 우선)</b></div>
@@ -559,7 +536,6 @@ th,td{
 <h2>상여금 및 수당 사용 원칙</h2>
 <p class="muted">수당과 상여금은 생활비로 흡수하지 않고 부채 추가상환과 비상금 확보를 우선합니다.</p>
 </div>
-
 </section>
 
 <div class="footer">
@@ -941,7 +917,6 @@ function renderFixedItems(){
 
     html += `
     <div class="card" style="background:#ffffff; border:1px solid #e5e7eb; margin-bottom:12px; padding:12px;">
-      
       <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
         <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleMainCheck(${index}, this.checked)" style="width: 20px; height: 20px; cursor: pointer;">
         <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: ${item.type === 'income' ? '#d1fae5' : '#fee2e2'}; color: ${item.type === 'income' ? '#065f46' : '#991b1b'}; font-weight: bold;">
@@ -987,7 +962,6 @@ function renderFixedItems(){
 
     if(item.showSubManager){
       html += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e5e7eb;">`;
-      
       if(hasSubs){
         item.subItems.forEach((sub, sIdx) => {
           html += `
@@ -1011,43 +985,24 @@ function renderFixedItems(){
         </div>
       </div>`;
     }
-
     html += `</div>`;
   });
 
   $('fixedItemsList').innerHTML = html;
 }
 
-function updateFixedItemTitle(index, value){
-  fixedItems[index].title = value.trim();
-}
-
-function updateFixedItemCategory(index, category){
-  fixedItems[index].category = category;
-}
-
-function updateFixedItemMemo(index, value){
-  fixedItems[index].memo = value.trim();
-}
-
-function toggleSubManager(index){
-  fixedItems[index].showSubManager = !fixedItems[index].showSubManager;
-  renderFixedItems();
-}
-
+function updateFixedItemTitle(index, value){ fixedItems[index].title = value.trim(); }
+function updateFixedItemCategory(index, category){ fixedItems[index].category = category; }
+function updateFixedItemMemo(index, value){ fixedItems[index].memo = value.trim(); }
+function toggleSubManager(index){ fixedItems[index].showSubManager = !fixedItems[index].showSubManager; renderFixedItems(); }
 function toggleMainCheck(index, isChecked){
   fixedItems[index].checked = isChecked;
   if(fixedItems[index].subItems && fixedItems[index].subItems.length > 0){
     fixedItems[index].subItems.forEach(sub => sub.checked = isChecked);
-    if(isChecked){
-      fixedItems[index].amount = fixedItems[index].subItems.reduce((sum, s) => sum + Number(s.amount || 0), 0);
-    } else {
-      fixedItems[index].amount = 0;
-    }
+    fixedItems[index].amount = isChecked ? fixedItems[index].subItems.reduce((sum, s) => sum + Number(s.amount || 0), 0) : 0;
   }
   renderFixedItems();
 }
-
 function toggleSubCheck(itemIndex, subIndex, isChecked){
   fixedItems[itemIndex].subItems[subIndex].checked = isChecked;
   const checkedSubs = fixedItems[itemIndex].subItems.filter(s => s.checked);
@@ -1055,31 +1010,24 @@ function toggleSubCheck(itemIndex, subIndex, isChecked){
   fixedItems[itemIndex].checked = checkedSubs.length > 0;
   renderFixedItems();
 }
-
 function updateSubItemAmount(itemIndex, subIndex, newAmount){
   fixedItems[itemIndex].subItems[subIndex].amount = newAmount;
   const checkedSubs = fixedItems[itemIndex].subItems.filter(s => s.checked);
   fixedItems[itemIndex].amount = checkedSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0);
   renderFixedItems();
 }
-
 function addSubItem(itemIndex){
   const nameInput = $(`subName_${itemIndex}`);
   const amountInput = $(`subAmount_${itemIndex}`);
   const name = nameInput.value.trim();
   const amount = Number(amountInput.value);
-
   if(!name){ alert('세부항목명을 입력하세요.'); return; }
   if(!amount || amount <= 0){ alert('금액을 입력하세요.'); return; }
-
   if(!fixedItems[itemIndex].subItems) fixedItems[itemIndex].subItems = [];
   fixedItems[itemIndex].subItems.push({ name, amount, checked: false });
-  
-  nameInput.value = '';
-  amountInput.value = '';
+  nameInput.value = ''; amountInput.value = '';
   renderFixedItems();
 }
-
 function deleteSubItem(itemIndex, subIndex){
   fixedItems[itemIndex].subItems.splice(subIndex, 1);
   const checkedSubs = fixedItems[itemIndex].subItems.filter(s => s.checked);
@@ -1087,11 +1035,7 @@ function deleteSubItem(itemIndex, subIndex){
   fixedItems[itemIndex].checked = checkedSubs.length > 0;
   renderFixedItems();
 }
-
-function updateFixedItemAmount(index, value){
-  fixedItems[index].amount = value;
-}
-
+function updateFixedItemAmount(index, value){ fixedItems[index].amount = value; }
 function updateFixedItemDate(index, value){
   if(!value) return;
   fixedItems[index].day = value.slice(8, 10);
@@ -1238,7 +1182,6 @@ async function addTx(){
   } else {
     await loadAll();
   }
-
   alert('저장되었습니다.');
 }
 
@@ -1320,7 +1263,6 @@ async function loadTx(){
   let income = 0;
   let expense = 0;
   let html = '';
-
   let catMap = {};
   let totalExp = 0;
 
@@ -1350,7 +1292,6 @@ async function loadTx(){
 
   const sortedCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
   let statsHtml = '';
-
   const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#6366f1'];
   let gradientStops = [];
   let currentAngle = 0;
@@ -1375,12 +1316,8 @@ async function loadTx(){
       chartEl.style.background = '#e5e7eb';
     }
   }
-  if($('donutTotalAmount')){
-    $('donutTotalAmount').textContent = won(totalExp);
-  }
-  if($('donutLegend')){
-    $('donutLegend').innerHTML = legendHtml || '<span class="muted" style="font-size:11px;">지출 내역이 없습니다.</span>';
-  }
+  if($('donutTotalAmount')){ $('donutTotalAmount').textContent = won(totalExp); }
+  if($('donutLegend')){ $('donutLegend').innerHTML = legendHtml || '<span class="muted" style="font-size:11px;">지출 내역이 없습니다.</span>'; }
 
   if(sortedCats.length === 0){
     statsHtml = '<div class="empty">이번 달 지출 내역이 없습니다.</div>';
@@ -1429,7 +1366,7 @@ async function loadDebt(){
       <div style="text-align:right;">
         <span class="amount">${won(x.principal)}</span>
         <div style="margin-top:6px; display:flex; gap:4px; justify-content:flex-end;">
-          <button class="small" onclick="enableDebtEdit('${x.id}', '${x.name}', ${x.principal}, ${x.rate}, ${x.monthly_payment})" style="padding:3px 8px; font-size:11px; background:#2563eb; color:white;">수정</button>
+          <button class="small" onclick="enableDebtEdit('${x.id}', '${x.name}', ${x.principal}, ${x.rate}, ${x.monthly_payment})" style="padding:3px 8px; font-size:11px; background:#2563eb; color:white;">잔액수정</button>
           <button class="small danger" onclick="deleteRow('debts','${x.id}')" style="padding:3px 8px; font-size:11px;">삭제</button>
         </div>
       </div>
@@ -1439,34 +1376,28 @@ async function loadDebt(){
   $('debtList').innerHTML = html || '<div class="empty">등록된 부채가 없습니다.</div>';
   $('dashDebt').textContent = won(total);
 
-  // 🚀 부채 잔액 스피드 및 진행상황 시각화 계산 로직 실행
+  // 부채 속도계 및 진행상황 계산 연동
   updateDebtSpeedometer(total);
-
   updateRealtimeDecisionLogic();
 }
 
-// 🚀 부채 속도계 및 월별 감축 계산 함수
 function updateDebtSpeedometer(currentTotalDebt){
   $('dashTotalDebtDisplay').textContent = won(currentTotalDebt);
 
   let history = JSON.parse(localStorage.getItem('family_debt_history')) || {};
-  
-  // 최초 등록된 최고 부채 기준선 설정 (없으면 현재 값으로 초기화)
   let baselineDebt = Number(localStorage.getItem('family_debt_baseline')) || 0;
+  
   if(!baselineDebt || currentTotalDebt > baselineDebt){
     baselineDebt = currentTotalDebt;
     localStorage.setItem('family_debt_baseline', baselineDebt);
   }
 
-  // 이전 기록된 달 찾기 (현재 월 제외 직전 기록)
   let months = Object.keys(history).sort();
   let prevMonthDebt = null;
   
-  // 현재 월 저장
   history[currentYearMonth] = currentTotalDebt;
   localStorage.setItem('family_debt_history', JSON.stringify(history));
 
-  // 직전 달 데이터 비교
   let prevMonths = months.filter(m => m < currentYearMonth);
   if(prevMonths.length > 0){
     let lastRecordedMonth = prevMonths[prevMonths.length - 1];
@@ -1477,7 +1408,7 @@ function updateDebtSpeedometer(currentTotalDebt){
   let cheerEl = $('mentalCheerMessage');
 
   if(prevMonthDebt !== null){
-    let diff = currentTotalDebt - prevMonthDebt; // 음수면 감소(좋음), 양수면 증가
+    let diff = currentTotalDebt - prevMonthDebt;
     if(diff < 0){
       diffEl.innerHTML = `<span class="green">▼ ${won(Math.abs(diff))} 감소! 🚀</span>`;
       cheerEl.innerHTML = `✨ 지난달보다 빚이 줄었습니다! 이 기세를 이어가세요!`;
@@ -1493,7 +1424,6 @@ function updateDebtSpeedometer(currentTotalDebt){
     cheerEl.innerHTML = `✨ 부채 탈출 대장정의 출발점입니다. 매달 줄어드는 속도를 지켜보세요!`;
   }
 
-  // 감축률 프로그레스 바 계산
   let reducedAmount = Math.max(0, baselineDebt - currentTotalDebt);
   let progressPct = baselineDebt > 0 ? Math.min(100, Math.round((reducedAmount / baselineDebt) * 100)) : 0;
   
@@ -1505,10 +1435,10 @@ function enableDebtEdit(id, name, principal, rate, payment){
   const row = $(`debt-row-${id}`);
   row.innerHTML = `
     <div style="width:100%;">
-      <b>${name} (정보 수정)</b>
+      <b>${name} (현재 잔액/조건 수정)</b>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:8px;">
         <div>
-          <label style="font-size:10px; margin:0 0 2px 0;">원금 (원)</label>
+          <label style="font-size:10px; margin:0 0 2px 0;">현재 원금 (원)</label>
           <input type="number" id="edit_principal_${id}" value="${principal}" style="padding:6px; font-size:12px;">
         </div>
         <div>
@@ -1546,7 +1476,7 @@ async function saveDebtEdit(id){
     return;
   }
 
-  alert('부채 정보가 성공적으로 수정되었습니다.');
+  alert('대출 잔액 및 정보가 성공적으로 수정되었습니다!');
   await loadDebt();
 }
 
