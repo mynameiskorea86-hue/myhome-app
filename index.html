@@ -221,6 +221,35 @@ th,td{
   </div>
 </div>
 
+<!-- 🚀 [신규 추가] 부채 탈출 스피드 & 잔액 감소 추적 카드 -->
+<div class="card" style="background:#faf5ff; border:1px solid #e9d5ff;">
+  <h2 style="color:#7e22ce; margin-bottom:8px;">🚀 부채 탈출 스피드 & 속도계</h2>
+  <p class="muted" style="margin-bottom:12px;">전월 대비 총부채 감축 속도와 탈출 진행률을 실시간으로 보여줍니다.</p>
+  
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+    <div style="background:white; padding:10px; border-radius:8px; border:1px solid #f3e8ff;">
+      <span style="font-size:11px; color:#6b7280;">전월 대비 부채 증감</span>
+      <div id="dashDebtDiff" style="font-size:15px; font-weight:800; margin-top:2px;">계산 중...</div>
+    </div>
+    <div style="background:white; padding:10px; border-radius:8px; border:1px solid #f3e8ff;">
+      <span style="font-size:11px; color:#6b7280;">현재 부채 총합</span>
+      <div id="dashTotalDebtDisplay" style="font-size:15px; font-weight:800; color:#7e22ce; margin-top:2px;">0원</div>
+    </div>
+  </div>
+
+  <!-- 프로그레스 바 영역 -->
+  <div style="background:white; padding:10px; border-radius:8px; border:1px solid #f3e8ff;">
+    <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+      <b>부채 감축 마일스톤 (초기 대비 감축률)</b>
+      <span id="debtProgressPct" style="font-weight:bold; color:#7e22ce;">0%</span>
+    </div>
+    <div style="width:100%; background:#e5e7eb; height:10px; border-radius:5px; overflow:hidden;">
+      <div id="debtProgressBar" style="width:0%; background:#9333ea; height:100%; transition:width 0.5s;"></div>
+    </div>
+    <div id="mentalCheerMessage" style="font-size:11px; color:#6b7280; margin-top:6px; text-align:center; font-weight:bold;">✨ 오늘도 한 걸음 더 경제적 자유에 가까워지고 있습니다!</div>
+  </div>
+</div>
+
 <!-- 🚨 부채 탈출 실시간 판단 대시보드 카드 -->
 <div class="card" style="background:#fef2f2; border:1px solid #fecaca;">
   <h2 style="color:#b91c1c; margin-bottom:8px;">🚨 부채 탈출 실시간 판단 로직</h2>
@@ -558,11 +587,9 @@ function formatInputComma(input){
   input.value = Number(cleanVal).toLocaleString('ko-KR');
 }
 
-// 1. 수입·지출 직접 입력용 카테고리 (사진 속 신규 카테고리 반영)
 let txIncomeCategories = JSON.parse(localStorage.getItem('family_tx_income_cats')) || ['급여', '부수입', '상여/수당', '기타수입'];
 let txExpenseCategories = JSON.parse(localStorage.getItem('family_tx_expense_cats')) || ['보험료', '기타지출', '대출이자납부', '할부금', '통신비', '신용카드납부', '공과금', '주택담보대출'];
 
-// 2. 고정 항목 분류용 카테고리 (사진 속 신규 카테고리 반영)
 let incomeCategories = JSON.parse(localStorage.getItem('family_income_cats')) || ['급여', '주담대보탬', '정근수당', '명절휴가비', '성과상여금', '상여금', '기타수입'];
 let expenseCategories = JSON.parse(localStorage.getItem('family_expense_cats')) || ['보험료', '기타지출', '대출이자납부', '할부금', '통신비', '신용카드납부', '공과금', '주택담보대출'];
 
@@ -649,7 +676,6 @@ function updateTxCategorySelect(){
   }
 }
 
-// 상여금 설정값 관리 (localStorage 기반)
 let bonusSettings = JSON.parse(localStorage.getItem('family_bonus_settings')) || {
   baseSalary: 4110500,
   junggeunRate: 50,
@@ -1322,7 +1348,6 @@ async function loadTx(){
     </div>`;
   });
 
-  // 📊 카테고리별 통계표 및 동그란 시간표(원형 도넛 차트) 렌더링
   const sortedCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
   let statsHtml = '';
 
@@ -1414,7 +1439,66 @@ async function loadDebt(){
   $('debtList').innerHTML = html || '<div class="empty">등록된 부채가 없습니다.</div>';
   $('dashDebt').textContent = won(total);
 
+  // 🚀 부채 잔액 스피드 및 진행상황 시각화 계산 로직 실행
+  updateDebtSpeedometer(total);
+
   updateRealtimeDecisionLogic();
+}
+
+// 🚀 부채 속도계 및 월별 감축 계산 함수
+function updateDebtSpeedometer(currentTotalDebt){
+  $('dashTotalDebtDisplay').textContent = won(currentTotalDebt);
+
+  let history = JSON.parse(localStorage.getItem('family_debt_history')) || {};
+  
+  // 최초 등록된 최고 부채 기준선 설정 (없으면 현재 값으로 초기화)
+  let baselineDebt = Number(localStorage.getItem('family_debt_baseline')) || 0;
+  if(!baselineDebt || currentTotalDebt > baselineDebt){
+    baselineDebt = currentTotalDebt;
+    localStorage.setItem('family_debt_baseline', baselineDebt);
+  }
+
+  // 이전 기록된 달 찾기 (현재 월 제외 직전 기록)
+  let months = Object.keys(history).sort();
+  let prevMonthDebt = null;
+  
+  // 현재 월 저장
+  history[currentYearMonth] = currentTotalDebt;
+  localStorage.setItem('family_debt_history', JSON.stringify(history));
+
+  // 직전 달 데이터 비교
+  let prevMonths = months.filter(m => m < currentYearMonth);
+  if(prevMonths.length > 0){
+    let lastRecordedMonth = prevMonths[prevMonths.length - 1];
+    prevMonthDebt = history[lastRecordedMonth];
+  }
+
+  let diffEl = $('dashDebtDiff');
+  let cheerEl = $('mentalCheerMessage');
+
+  if(prevMonthDebt !== null){
+    let diff = currentTotalDebt - prevMonthDebt; // 음수면 감소(좋음), 양수면 증가
+    if(diff < 0){
+      diffEl.innerHTML = `<span class="green">▼ ${won(Math.abs(diff))} 감소! 🚀</span>`;
+      cheerEl.innerHTML = `✨ 지난달보다 빚이 줄었습니다! 이 기세를 이어가세요!`;
+    } else if(diff > 0){
+      diffEl.innerHTML = `<span class="red">▲ ${won(diff)} 증가</span>`;
+      cheerEl.innerHTML = `💪 이번 달은 지출/대출이 늘었지만, 다음 달엔 충분히 역전할 수 있습니다!`;
+    } else {
+      diffEl.innerHTML = `<span class="muted">변동 없음 (0원)</span>`;
+      cheerEl.innerHTML = `⚖️ 부채 잔액이 유지 중입니다. 추가 상환으로 가속도를 붙여보세요!`;
+    }
+  } else {
+    diffEl.innerHTML = `<span class="blue">기준 기록 완료 (첫 달)</span>`;
+    cheerEl.innerHTML = `✨ 부채 탈출 대장정의 출발점입니다. 매달 줄어드는 속도를 지켜보세요!`;
+  }
+
+  // 감축률 프로그레스 바 계산
+  let reducedAmount = Math.max(0, baselineDebt - currentTotalDebt);
+  let progressPct = baselineDebt > 0 ? Math.min(100, Math.round((reducedAmount / baselineDebt) * 100)) : 0;
+  
+  $('debtProgressPct').textContent = `${progressPct}% 감축 (총 ${won(reducedAmount)} 털어냄)`;
+  $('debtProgressBar').style.width = `${progressPct}%`;
 }
 
 function enableDebtEdit(id, name, principal, rate, payment){
