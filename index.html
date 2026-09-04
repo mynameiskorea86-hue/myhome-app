@@ -418,14 +418,10 @@ th,td{
   </div>
 </div>
 
-<!-- 이번 달 고정지출 기준 -->
+<!-- 📊 이번 달 지출 카테고리별 통계표 -->
 <div class="card">
-<h2>이번 달 고정지출 기준</h2>
-<div class="row"><span>부채 상환·이자</span><b>약 223만원</b></div>
-<div class="row"><span>생활비·카드</span><b>약 235만원</b></div>
-<div class="row"><span>보험</span><b>약 24만원</b></div>
-<div class="row"><span>기타(휴대폰요금(나,와이프),가스비)</span><b>약 6만원</b></div>
-<div class="row"><span>기준 합계</span><b>약 488만원</b></div>
+  <h2>📊 이번 달 지출 카테고리별 통계</h2>
+  <div id="categoryStatsContent"></div>
 </div>
 
 <div class="card">
@@ -1291,9 +1287,18 @@ async function loadTx(){
   let expense = 0;
   let html = '';
 
+  let catMap = {};
+  let totalExp = 0;
+
   (data || []).forEach(x => {
-    if(x.type === 'income') income += Number(x.amount);
-    else expense += Number(x.amount);
+    if(x.type === 'income') {
+      income += Number(x.amount);
+    } else {
+      expense += Number(x.amount);
+      const cat = x.category || '미분류';
+      catMap[cat] = (catMap[cat] || 0) + Number(x.amount);
+      totalExp += Number(x.amount);
+    }
 
     html += `
     <div class="row ${x.type}">
@@ -1308,6 +1313,22 @@ async function loadTx(){
       </div>
     </div>`;
   });
+
+  // 📊 카테고리별 통계표 렌더링
+  const sortedCats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+  let statsHtml = '';
+  if(sortedCats.length === 0){
+    statsHtml = '<div class="empty">이번 달 지출 내역이 없습니다.</div>';
+  } else {
+    statsHtml = '<table><thead><tr><th>카테고리</th><th style="text-align:right;">금액</th><th style="text-align:right;">비율</th></tr></thead><tbody>';
+    sortedCats.forEach(([cat, amt]) => {
+      const pct = totalExp > 0 ? ((amt / totalExp) * 100).toFixed(1) : 0;
+      statsHtml += `<tr><td><b>${cat}</b></td><td style="text-align:right;" class="amount red">${won(amt)}</td><td style="text-align:right; color:#6b7280;">${pct}%</td></tr>`;
+    });
+    statsHtml += `<tr style="border-top:2px solid #111827; font-weight:bold;"><td>합계 지출</td><td style="text-align:right;" class="amount red">${won(totalExp)}</td><td style="text-align:right;">100%</td></tr>`;
+    statsHtml += '</tbody></table>';
+  }
+  $('categoryStatsContent').innerHTML = statsHtml;
 
   $('txList').innerHTML = html || `<div class="empty">${y}년 ${Number(m)}월에 등록된 내역이 없습니다.</div>`;
   $('dashIncome').textContent = won(income);
