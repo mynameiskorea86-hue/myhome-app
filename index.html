@@ -188,7 +188,7 @@ th,td{
 
 <header>
   <h1>우리家族 가계부</h1>
-  <div class="sub">빚을 갚아야 우리가족이 산다!</div>
+  <div class="sub">빛을 갚아야 우리가족이 산다!</div>
 </header>
 
 <main>
@@ -258,7 +258,7 @@ th,td{
 </div>
 </div>
 
-<!-- 📅 고정 수입·지출 예정일 및 세부항목 관리 (접기/펼치기 기능) -->
+<!-- 📅 고정 수입·지출 예정일 및 세부항목 관리 -->
 <div class="card" style="background:#f0fdf4; border:1px solid #bbf7d0;">
   <div onclick="toggleFixedCardContent()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
     <h2 style="color:#047857; margin:0;">📅 고정 수입·지출 예정일 관리</h2>
@@ -312,7 +312,7 @@ th,td{
   </div>
 </div>
 
-<!-- 이번 달 고정지출 기준 (요청사항: 기타 라벨 변경 반영) -->
+<!-- 이번 달 고정지출 기준 (기타 라벨 변경 반영) -->
 <div class="card">
 <h2>이번 달 고정지출 기준</h2>
 <div class="row"><span>부채 상환·이자</span><b>약 223만원</b></div>
@@ -426,7 +426,6 @@ th,td{
 
 
 <script>
-// 기존 Supabase 키 및 URL 적용
 const SUPABASE_URL = 'https://mqpgwpljdxrkzvxazxct.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_JZ9BOEbRvsDN-9mHE4vhfg_i5LWvzTR';
 
@@ -624,9 +623,11 @@ function renderFixedItems(){
       if(hasSubs){
         item.subItems.forEach((sub, sIdx) => {
           html += `
-          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; padding-left: 10px;">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding-left: 10px;">
             <input type="checkbox" ${sub.checked ? 'checked' : ''} onchange="toggleSubCheck(${index}, ${sIdx}, this.checked)" style="width: 16px; height: 16px; cursor: pointer;">
-            <span style="font-size: 12px; flex: 1;">${sub.name} (<b style="color:#2563eb;">${won(sub.amount)}</b>)</span>
+            <span style="font-size: 12px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sub.name}</span>
+            <input type="number" value="${sub.amount}" onchange="updateSubItemAmount(${index}, ${sIdx}, Number(this.value))" style="padding: 4px; font-size: 11px; width: 100px; font-weight: bold; color: #2563eb;">
+            <span style="font-size: 11px; color:#6b7280;">원</span>
             <button class="small danger" onclick="deleteSubItem(${index}, ${sIdx})" style="padding:2px 6px; font-size:10px;">X</button>
           </div>`;
         });
@@ -672,6 +673,15 @@ function toggleSubCheck(itemIndex, subIndex, isChecked){
   const checkedSubs = fixedItems[itemIndex].subItems.filter(s => s.checked);
   fixedItems[itemIndex].amount = checkedSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0);
   fixedItems[itemIndex].checked = checkedSubs.length > 0;
+  renderFixedItems();
+}
+
+// 세부항목 개별 금액 수정 함수
+function updateSubItemAmount(itemIndex, subIndex, newAmount){
+  fixedItems[itemIndex].subItems[subIndex].amount = newAmount;
+  // 체크된 항목들의 합산을 즉시 반영
+  const checkedSubs = fixedItems[itemIndex].subItems.filter(s => s.checked);
+  fixedItems[itemIndex].amount = checkedSubs.reduce((sum, s) => sum + Number(s.amount || 0), 0);
   renderFixedItems();
 }
 
@@ -1081,3 +1091,4 @@ window.addEventListener('load', async () => {
 
 </body>
 </html>
+
