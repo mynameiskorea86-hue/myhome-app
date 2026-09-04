@@ -260,13 +260,50 @@ th,td{
 
 <!-- 🎁 [방법 2+3 조합] 상여금 및 수당 간편 스케줄러 카드 -->
 <div class="card" style="background:#fdf4ff; border:1px solid #f5d0fe;">
-  <div onclick="toggleBonusCardContent()" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
-    <h2 style="color:#86198f; margin:0;">🎁 연간 상여금·수당 간편 스케줄러</h2>
-    <span id="bonusCardToggleText" style="font-size:12px; font-weight:bold; color:#86198f; background:#fae8ff; padding:4px 8px; border-radius:6px;">접기 ▲</span>
+  <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+    <h2 onclick="toggleBonusCardContent()" style="color:#86198f; margin:0; flex:1;">🎁 연간 상여금·수당 간편 스케줄러</h2>
+    <div style="display:flex; gap:6px; align-items:center;">
+      <button class="small" onclick="toggleBonusSettings()" style="background:#f0abfc; color:#581c87; font-size:11px; font-weight:bold; padding:4px 8px;">⚙️ 기준 설정</button>
+      <span id="bonusCardToggleText" onclick="toggleBonusCardContent()" style="font-size:12px; font-weight:bold; color:#86198f; background:#fae8ff; padding:4px 8px; border-radius:6px;">접기 ▲</span>
+    </div>
+  </div>
+
+  <!-- ⚙️ 산정 기준 수정 패널 (기본 숨김) -->
+  <div id="bonusSettingsPanel" style="display:none; margin-top:12px; background:white; padding:12px; border-radius:10px; border:1px solid #f0abfc;">
+    <b style="font-size:13px; color:#86198f; display:block; margin-bottom:8px;">🛠️ 연도별 봉급 및 수당 산정 기준 수정·저장</b>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <div>
+        <label style="margin:0 0 2px 0; font-size:10px;">기준 봉급 (원)</label>
+        <input type="text" id="settingBaseSalary" style="padding:6px; font-size:12px; font-weight:bold;">
+      </div>
+      <div>
+        <label style="margin:0 0 2px 0; font-size:10px;">성과상여금 기준금액 (원)</label>
+        <input type="text" id="settingPerfBase" style="padding:6px; font-size:12px; font-weight:bold;">
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:8px;">
+      <div>
+        <label style="margin:0 0 2px 0; font-size:10px;">정근수당 비율(%)</label>
+        <input type="number" id="settingJunggeunRate" style="padding:6px; font-size:12px;">
+      </div>
+      <div>
+        <label style="margin:0 0 2px 0; font-size:10px;">명절휴가비 비율(%)</label>
+        <input type="number" id="settingHolidayRate" style="padding:6px; font-size:12px;">
+      </div>
+      <div>
+        <label style="margin:0 0 2px 0; font-size:10px;">성과 1번 비율(%)</label>
+        <input type="number" id="settingPerfRate1" style="padding:6px; font-size:12px;">
+      </div>
+    </div>
+    <div style="margin-top:8px;">
+      <label style="margin:0 0 2px 0; font-size:10px;">성과 2번 비율(%)</label>
+      <input type="number" id="settingPerfRate2" style="padding:6px; font-size:12px; width:50%;">
+    </div>
+    <button class="primary small" onclick="saveBonusSettings()" style="background:#86198f; width:100%; margin-top:10px;">기준 설정 저장하기</button>
   </div>
 
   <div id="bonusCardBody" style="margin-top:12px; display:block;">
-    <p class="muted" style="margin-bottom:12px;">원하시는 수당의 자동 계산 금액을 확인 후, **금액을 직접 수정(오버라이드)**하거나 그대로 현재 조회 중인 월에 즉시 반영할 수 있습니다.</p>
+    <p class="muted" style="margin-bottom:12px;">자동 계산된 금액을 확인 후 직접 수정(오버라이드)하거나 현재 조회 중인 월에 즉시 반영할 수 있습니다.</p>
     
     <div style="display:flex; flex-direction:column; gap:10px;">
       
@@ -274,10 +311,10 @@ th,td{
       <div style="background:white; padding:10px; border-radius:10px; border:1px solid #f5d0fe; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
         <div>
           <b style="font-size:13px; color:#86198f;">정근수당 (1월, 7월)</b>
-          <div class="muted">봉급(4,110,500) × 50%</div>
+          <div id="descJunggeun" class="muted">봉급(4,110,500) × 50%</div>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <input type="number" id="bonus_junggeun" value="2055250" style="width:110px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
+          <input type="text" id="bonus_junggeun" value="2,055,250" oninput="formatInputComma(this)" style="width:125px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
           <button class="small" onclick="quickApplyBonus('정근수당', '정근수당 지급', $('bonus_junggeun').value)" style="background:#86198f; color:white; font-size:11px; padding:6px 10px;">현재 월 반영</button>
         </div>
       </div>
@@ -286,10 +323,10 @@ th,td{
       <div style="background:white; padding:10px; border-radius:10px; border:1px solid #f5d0fe; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
         <div>
           <b style="font-size:13px; color:#86198f;">명절휴가비 (설·추석 해당월)</b>
-          <div class="muted">봉급(4,110,500) × 60%</div>
+          <div id="descHoliday" class="muted">봉급(4,110,500) × 60%</div>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <input type="number" id="bonus_holiday" value="2466300" style="width:110px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
+          <input type="text" id="bonus_holiday" value="2,466,300" oninput="formatInputComma(this)" style="width:125px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
           <button class="small" onclick="quickApplyBonus('명절휴가비', '명절휴가비 지급', $('bonus_holiday').value)" style="background:#86198f; color:white; font-size:11px; padding:6px 10px;">현재 월 반영</button>
         </div>
       </div>
@@ -298,14 +335,14 @@ th,td{
       <div style="background:white; padding:10px; border-radius:10px; border:1px solid #f5d0fe; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
         <div>
           <b style="font-size:13px; color:#86198f;">성과상여금 (3월)</b>
-          <div class="muted">기준(3,444,700) × <span id="perfRateText">130%</span></div>
+          <div id="descPerf" class="muted">기준(3,444,700) × 130%</div>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <select id="perfSelect" onchange="updatePerfAmount()" style="width:80px; padding:6px; font-size:11px;">
-            <option value="4478110">130%</option>
-            <option value="3720276">108%</option>
+          <select id="perfSelect" onchange="updatePerfAmount()" style="width:75px; padding:6px; font-size:11px;">
+            <option value="130">130%</option>
+            <option value="108">108%</option>
           </select>
-          <input type="number" id="bonus_perf" value="4478110" style="width:110px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
+          <input type="text" id="bonus_perf" value="4,478,110" oninput="formatInputComma(this)" style="width:125px; padding:6px; font-size:12px; font-weight:bold; color:#059669;">
           <button class="small" onclick="quickApplyBonus('성과상여금', '성과상여금 지급', $('bonus_perf').value)" style="background:#86198f; color:white; font-size:11px; padding:6px 10px;">현재 월 반영</button>
         </div>
       </div>
@@ -488,7 +525,24 @@ const SUPABASE_KEY = 'sb_publishable_JZ9BOEbRvsDN-9mHE4vhfg_i5LWvzTR';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const $ = id => document.getElementById(id);
-const won = n => (Number(n) || 0).toLocaleString('ko-KR') + '원';
+const won = n => (Number(String(n).replace(/[^0-9]/g, '')) || 0).toLocaleString('ko-KR') + '원';
+const formatNum = n => (Number(String(n).replace(/[^0-9]/g, '')) || 0).toLocaleString('ko-KR');
+
+function formatInputComma(input){
+  const cleanVal = input.value.replace(/[^0-9]/g, '');
+  if(!cleanVal){ input.value = ''; return; }
+  input.value = Number(cleanVal).toLocaleString('ko-KR');
+}
+
+// 상여금 설정값 관리 (localStorage 기반)
+let bonusSettings = JSON.parse(localStorage.getItem('family_bonus_settings')) || {
+  baseSalary: 4110500,
+  junggeunRate: 50,
+  holidayRate: 60,
+  perfBase: 3444700,
+  perfRate1: 130,
+  perfRate2: 108
+};
 
 const today = new Date().toISOString().slice(0,10);
 let currentYearMonth = today.slice(0, 7);
@@ -530,6 +584,65 @@ let fixedItems = defaultFixedItems.map(item => ({
   showSubManager: item.subItems && item.subItems.length > 0 
 }));
 
+function initBonusSchedulerUI(){
+  $('settingBaseSalary').value = formatNum(bonusSettings.baseSalary);
+  $('settingPerfBase').value = formatNum(bonusSettings.perfBase);
+  $('settingJunggeunRate').value = bonusSettings.junggeunRate;
+  $('settingHolidayRate').value = bonusSettings.holidayRate;
+  $('settingPerfRate1').value = bonusSettings.perfRate1;
+  $('settingPerfRate2').value = bonusSettings.perfRate2;
+
+  // 설명 텍스트 업데이트
+  $('descJunggeun').textContent = `봉급(${formatNum(bonusSettings.baseSalary)}) × ${bonusSettings.junggeunRate}%`;
+  $('descHoliday').textContent = `봉급(${formatNum(bonusSettings.baseSalary)}) × ${bonusSettings.holidayRate}%`;
+
+  const selRate = Number($('perfSelect').value) === 130 ? bonusSettings.perfRate1 : bonusSettings.perfRate2;
+  $('descPerf').textContent = `기준(${formatNum(bonusSettings.perfBase)}) × ${selRate}%`;
+
+  // 계산된 금액 입력란 설정
+  const junggeunAmt = Math.round(bonusSettings.baseSalary * (bonusSettings.junggeunRate / 100));
+  const holidayAmt = Math.round(bonusSettings.baseSalary * (bonusSettings.holidayRate / 100));
+  const perfAmt = Math.round(bonusSettings.perfBase * (selRate / 100));
+
+  $('bonus_junggeun').value = formatNum(junggeunAmt);
+  $('bonus_holiday').value = formatNum(holidayAmt);
+  $('bonus_perf').value = formatNum(perfAmt);
+
+  // 셀렉트 박스 옵션 텍스트 업데이트
+  const perfSelect = $('perfSelect');
+  perfSelect.options[0].text = bonusSettings.perfRate1 + '%';
+  perfSelect.options[0].value = bonusSettings.perfRate1;
+  perfSelect.options[1].text = bonusSettings.perfRate2 + '%';
+  perfSelect.options[1].value = bonusSettings.perfRate2;
+}
+
+function toggleBonusSettings(){
+  const panel = $('bonusSettingsPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveBonusSettings(){
+  bonusSettings.baseSalary = Number($('settingBaseSalary').value.replace(/[^0-9]/g, '')) || 4110500;
+  bonusSettings.perfBase = Number($('settingPerfBase').value.replace(/[^0-9]/g, '')) || 3444700;
+  bonusSettings.junggeunRate = Number($('settingJunggeunRate').value) || 50;
+  bonusSettings.holidayRate = Number($('settingHolidayRate').value) || 60;
+  bonusSettings.perfRate1 = Number($('settingPerfRate1').value) || 130;
+  bonusSettings.perfRate2 = Number($('settingPerfRate2').value) || 108;
+
+  localStorage.setItem('family_bonus_settings', JSON.stringify(bonusSettings));
+  initBonusSchedulerUI();
+  toggleBonusSettings();
+  alert('상여금 산정 기준이 성공적으로 저장되었습니다!');
+}
+
+function updatePerfAmount(){
+  const rate = Number($('perfSelect').value);
+  const selRate = rate === bonusSettings.perfRate1 ? bonusSettings.perfRate1 : bonusSettings.perfRate2;
+  $('descPerf').textContent = `기준(${formatNum(bonusSettings.perfBase)}) × ${selRate}%`;
+  const perfAmt = Math.round(bonusSettings.perfBase * (selRate / 100));
+  $('bonus_perf').value = formatNum(perfAmt);
+}
+
 function toggleFixedCardContent() {
   const body = $('fixedCardBody');
   const text = $('fixedCardToggleText');
@@ -554,17 +667,11 @@ function toggleBonusCardContent() {
   }
 }
 
-function updatePerfAmount(){
-  const val = $('perfSelect').value;
-  $('bonus_perf').value = val;
-  $('perfRateText').textContent = val === '4478110' ? '130%' : '108%';
-}
-
 async function quickApplyBonus(category, memo, amountVal){
-  const amt = Number(amountVal);
+  const amt = Number(String(amountVal).replace(/[^0-9]/g, ''));
   if(!amt || amt <= 0){ alert('올바른 금액을 입력하세요.'); return; }
   
-  const targetDate = currentYearMonth + '-10'; // 기본 10일자 지급 가정, 필요시 수입/지출 탭에서 변경 가능
+  const targetDate = currentYearMonth + '-10';
   if(!confirm(`[${currentYearMonth.replace('-', '년 ')}월 10일]에 '${category}' ${won(amt)}을(를) 수입으로 즉시 반영하시겠습니까?`)) return;
 
   const { error } = await supabaseClient.from('transactions').insert({
@@ -1211,6 +1318,7 @@ function updateRealtimeDecisionLogic(currentBalance){
 window.addEventListener('load', async () => {
   try{
     updatePresets();
+    initBonusSchedulerUI();
     await loadAll();
     console.log('초기화 완료');
   }catch(error){
